@@ -1,529 +1,153 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>TempMailBox — Disposable email with a 10-minute timer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Tailwind via CDN -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              bg: "#0b0f14",
-              card: "#0f131a",
-              accent: "#22c55e",
-              purplebtn: "#7c3aed",
-            },
-          },
-        },
-      };
-    </script>
-  </head>
-  <body class="min-h-screen bg-bg text-gray-100 flex flex-col">
-    <!-- Top bar -->
-    <header
-      class="w-full border-b border-white/5 bg-bg/80 backdrop-blur flex items-center justify-between px-6 py-3"
-    >
-      <div class="flex items-center gap-3">
-        <span
-          class="inline-flex items-center rounded-full bg-card px-4 py-1 text-sm font-semibold"
-          >TempMailBox</span
-        >
-        <span class="text-sm text-gray-400"
-          >Disposable email with a 10-minute timer</span
-        >
-      </div>
-      <button
-        id="btnNew"
-        class="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black shadow-lg shadow-emerald-500/40 hover:bg-emerald-400 transition"
-      >
-        New address
-      </button>
-    </header>
+<head>
+<meta charset="UTF-8">
+<title>TempMailBox</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <main class="flex-1 px-4 md:px-10 py-8 max-w-6xl w-full mx-auto space-y-6">
-      <!-- Alerts -->
-      <div id="alert" class="hidden text-sm rounded-md px-3 py-2"></div>
+<script src="https://cdn.tailwindcss.com"></script>
 
-      <!-- Address + controls -->
-      <section
-        class="rounded-2xl bg-card/90 shadow-xl shadow-black/40 border border-white/5 p-4 md:p-6 space-y-3"
-      >
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <p class="text-xs uppercase tracking-wide text-gray-400">
-              Your temporary email
-            </p>
-            <p class="text-xs text-gray-500">
-              Expires in <span id="countdown">--:--</span>
-            </p>
-          </div>
+</head>
 
-          <div class="flex items-center gap-2">
-            <button
-              id="btnExtend"
-              class="rounded-full bg-purplebtn px-4 py-1.5 text-xs font-medium hover:bg-purple-500 transition"
-            >
-              Extend +10m
-            </button>
-            <button
-              id="btnRefresh"
-              class="rounded-full bg-card px-4 py-1.5 text-xs font-medium border border-white/10 hover:border-white/40 transition"
-            >
-              Refresh inbox
-            </button>
-          </div>
-        </div>
+<body class="bg-black text-white min-h-screen flex flex-col">
 
-        <div
-          class="mt-2 flex items-center gap-3 rounded-xl bg-black/40 px-3 py-2 border border-white/10"
-        >
-          <code
-            id="emailText"
-            class="flex-1 font-mono text-sm text-gray-100 truncate"
-            >-</code
-          >
-          <button
-            id="btnCopy"
-            class="rounded-lg bg-card px-4 py-1.5 text-xs border border-white/15 hover:border-white/40 transition"
-          >
-            Copy
-          </button>
-        </div>
+<header class="p-4 border-b border-gray-800 flex justify-between items-center">
+  <div>
+    <h1 class="font-bold text-lg">TempMailBox</h1>
+    <p class="text-xs text-gray-400">10 minute disposable email</p>
+  </div>
 
-        <p class="mt-2 text-xs text-gray-500">
-          Tip: Gmail and other providers may need 10–60 seconds to deliver to
-          disposable inboxes. We auto-refresh; you can also click “Refresh
-          inbox”.
-        </p>
-      </section>
+  <button id="btnNew" class="bg-green-500 text-black px-4 py-2 rounded">
+    New Address
+  </button>
+</header>
 
-      <!-- Inbox + message -->
-      <section class="grid md:grid-cols-2 gap-4">
-        <div
-          class="rounded-2xl bg-card/90 shadow-lg shadow-black/30 border border-white/5 p-4"
-        >
-          <h2 class="text-sm font-semibold mb-2">Inbox</h2>
-          <div
-            id="inboxEmpty"
-            class="text-xs text-gray-500 border border-dashed border-white/10 rounded-xl px-4 py-6 text-center"
-          >
-            No emails yet. Send a test email to your address to see it here.
-          </div>
-          <ul
-            id="inboxList"
-            class="hidden divide-y divide-white/5 max-h-80 overflow-y-auto text-sm"
-          ></ul>
-        </div>
+<main class="flex-1 p-4 max-w-5xl mx-auto w-full space-y-4">
 
-        <div
-          class="rounded-2xl bg-card/90 shadow-lg shadow-black/30 border border-white/5 p-4"
-        >
-          <h2 class="text-sm font-semibold mb-2">Message</h2>
-          <div
-            id="msgEmpty"
-            class="text-xs text-gray-500 border border-dashed border-white/10 rounded-xl px-4 py-6 text-center"
-          >
-            Select a message to read its contents.
-          </div>
-          <div id="msgView" class="hidden space-y-3 text-sm">
-            <div>
-              <div
-                class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
-              >
-                Subject
-              </div>
-              <div id="msgSubject" class="font-medium"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-xs text-gray-400">
-              <div>
-                <span class="font-semibold text-gray-300">From:</span>
-                <span id="msgFrom"></span>
-              </div>
-              <div>
-                <span class="font-semibold text-gray-300">To:</span>
-                <span id="msgTo"></span>
-              </div>
-              <div class="col-span-2">
-                <span class="font-semibold text-gray-300">Date:</span>
-                <span id="msgDate"></span>
-              </div>
-            </div>
-            <div
-              id="msgBody"
-              class="mt-2 rounded-lg bg-black/40 border border-white/10 p-3 text-sm whitespace-pre-wrap"
-            ></div>
-          </div>
-        </div>
-      </section>
-    </main>
+<div id="alert" class="hidden text-sm p-2 rounded"></div>
 
-    <footer
-      class="w-full border-t border-white/5 text-xs text-gray-500 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-2"
-    >
-      <div>
-        © <span id="year"></span> TempMailBox — Part of the Instant Tools
-        Network
-      </div>
-      <div class="space-x-4">
-        <a href="#" class="hover:text-gray-300">Privacy</a>
-        <a href="#" class="hover:text-gray-300">Terms</a>
-      </div>
-    </footer>
+<div class="bg-gray-900 p-4 rounded space-y-2">
+  <div class="flex justify-between items-center">
+    <div>
+      <p class="text-xs text-gray-400">Your email</p>
+      <p id="shortEmail" class="text-lg font-mono"></p>
+      <p class="text-xs text-gray-500">
+        Expires in <span id="countdown"></span>
+      </p>
+    </div>
 
-    <script>
-      // ------------ tiny helpers ------------
-      const API_BASE = "/.netlify/functions/relay";
-      const STORAGE_KEY = "tmMailSlurpState";
+    <div class="flex gap-2">
+      <button id="btnCopy" class="border px-3 py-1 text-xs">Copy</button>
+      <button id="btnRefresh" class="border px-3 py-1 text-xs">Refresh</button>
+    </div>
+  </div>
+</div>
 
-      function showAlert(message, type = "error") {
-        const el = document.getElementById("alert");
-        if (!message) {
-          el.classList.add("hidden");
-          el.textContent = "";
-          return;
-        }
-        el.textContent = message;
-        el.classList.remove("hidden");
-        el.classList.remove(
-          "bg-red-900/60",
-          "border-red-500/60",
-          "bg-emerald-900/60",
-          "border-emerald-500/60"
-        );
-        if (type === "success") {
-          el.classList.add(
-            "bg-emerald-900/60",
-            "border-emerald-500/60",
-            "border"
-          );
-        } else {
-          el.classList.add("bg-red-900/60", "border-red-500/60", "border");
-        }
-      }
+<div class="grid md:grid-cols-2 gap-4">
 
-      async function api(action, params = {}) {
-        const url = new URL(API_BASE, window.location.origin);
-        url.searchParams.set("action", action);
-        for (const [k, v] of Object.entries(params)) {
-          if (v !== undefined && v !== null) {
-            url.searchParams.set(k, v);
-          }
-        }
+<div class="bg-gray-900 p-4 rounded">
+  <h2 class="mb-2">Inbox</h2>
+  <ul id="inboxList" class="space-y-2"></ul>
+</div>
 
-        const res = await fetch(url.toString(), {
-          method: "GET",
-          headers: { "cache-control": "no-store" },
-        });
+<div class="bg-gray-900 p-4 rounded">
+  <h2 class="mb-2">Message</h2>
+  <div id="msgBody"></div>
+</div>
 
-        const text = await res.text();
-        let data;
-        try {
-          data = text ? JSON.parse(text) : {};
-        } catch {
-          throw new Error("Bad JSON from backend: " + text.slice(0, 120));
-        }
+</div>
 
-        if (!res.ok || data.error) {
-          const msg =
-            data && data.error
-              ? data.error
-              : `HTTP ${res.status} calling ${action}`;
-          throw new Error(msg);
-        }
-        return data;
-      }
+</main>
 
-      function loadState() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          return raw ? JSON.parse(raw) : null;
-        } catch {
-          return null;
-        }
-      }
+<script>
 
-      function saveState(state) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      }
+const API = "/.netlify/functions/relay";
+let state = null;
 
-      function clearState() {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+function showAlert(msg){
+  const el = document.getElementById("alert");
+  if(!msg){
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = msg;
+  el.classList.remove("hidden");
+}
 
-      function formatCountdown(msLeft) {
-        if (msLeft <= 0) return "00:00";
-        const s = Math.floor(msLeft / 1000);
-        const m = Math.floor(s / 60);
-        const sec = s % 60;
-        return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-      }
+function shortEmail(email){
+  if(!email) return "";
+  const [name,domain] = email.split("@");
+  return name.slice(0,6) + "...@" + domain;
+}
 
-      function formatDate(iso) {
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return iso || "";
-        return d.toLocaleString();
-      }
+async function api(action, params={}){
+  const url = new URL(API, location.origin);
+  url.searchParams.set("action", action);
+  Object.entries(params).forEach(([k,v])=>{
+    url.searchParams.set(k,v);
+  });
 
-      // ------------ UI state ------------
-      let appState = null;
-      let countdownTimer = null;
-      let pollTimer = null;
+  const res = await fetch(url);
+  return res.json();
+}
 
-      function setEmailUI(address) {
-        document.getElementById("emailText").textContent =
-          address || "-";
-      }
+async function newInbox(){
+  showAlert("Creating inbox...");
+  const data = await api("newInbox");
 
-      function updateCountdown() {
-        const el = document.getElementById("countdown");
-        if (!appState || !appState.expiresAt) {
-          el.textContent = "--:--";
-          return;
-        }
-        const msLeft = appState.expiresAt - Date.now();
-        el.textContent = formatCountdown(msLeft);
-        const expired = msLeft <= 0;
+  state = data;
 
-        document
-          .getElementById("btnExtend")
-          .classList.toggle("opacity-50", expired);
-        document
-          .getElementById("btnRefresh")
-          .classList.toggle("opacity-50", expired);
-        document
-          .getElementById("btnExtend")
-          .toggleAttribute("disabled", expired);
-        document
-          .getElementById("btnRefresh")
-          .toggleAttribute("disabled", expired);
+  document.getElementById("shortEmail").textContent = shortEmail(data.address);
 
-        if (expired && pollTimer) {
-          clearInterval(pollTimer);
-          pollTimer = null;
-        }
-      }
+  showAlert("");
+  loadInbox();
+}
 
-      function startCountdown() {
-        if (countdownTimer) clearInterval(countdownTimer);
-        updateCountdown();
-        countdownTimer = setInterval(updateCountdown, 1000);
-      }
+async function loadInbox(){
+  if(!state) return;
 
-      function startPolling() {
-        if (pollTimer) clearInterval(pollTimer);
-        if (!appState || !appState.inboxId) return;
-        const tick = () => {
-          const msLeft = appState.expiresAt - Date.now();
-          if (msLeft <= 0) return;
-          loadInbox();
-        };
-        tick();
-        pollTimer = setInterval(tick, 15000);
-      }
+  showAlert("Checking inbox...");
 
-      // ------------ inbox rendering ------------
-      function renderInbox(items) {
-        const list = document.getElementById("inboxList");
-        const empty = document.getElementById("inboxEmpty");
+  const items = await api("getMessages",{inboxId:state.inboxId});
 
-        if (!items || !items.length) {
-          empty.classList.remove("hidden");
-          list.classList.add("hidden");
-          list.innerHTML = "";
-          return;
-        }
+  const list = document.getElementById("inboxList");
+  list.innerHTML = "";
 
-        empty.classList.add("hidden");
-        list.classList.remove("hidden");
-        list.innerHTML = "";
+  items.forEach(item=>{
+    const li = document.createElement("li");
+    li.className="p-2 border border-gray-700 cursor-pointer";
+    li.textContent = item.subject || "(no subject)";
 
-        for (const item of items) {
-          const li = document.createElement("li");
-          li.className =
-            "px-3 py-2 hover:bg-white/5 cursor-pointer flex flex-col gap-0.5";
-          li.dataset.id = item.id;
+    li.onclick = ()=>loadMessage(item.id);
 
-          const top = document.createElement("div");
-          top.className = "flex items-center justify-between gap-2";
+    list.appendChild(li);
+  });
 
-          const from = document.createElement("div");
-          from.className = "text-xs text-gray-400 truncate";
-          from.textContent = item.from || "(unknown sender)";
+  showAlert("");
+}
 
-          const date = document.createElement("div");
-          date.className = "text-[11px] text-gray-500";
-          date.textContent = formatDate(item.createdAt);
+async function loadMessage(id){
+  showAlert("Loading message...");
+  const msg = await api("readMessage",{id});
 
-          top.appendChild(from);
-          top.appendChild(date);
+  const body = document.getElementById("msgBody");
+  body.innerHTML = msg.htmlBody || msg.body || "";
 
-          const subject = document.createElement("div");
-          subject.className = "text-sm text-gray-100 truncate";
-          subject.textContent = item.subject || "(no subject)";
+  showAlert("");
+}
 
-          li.appendChild(top);
-          li.appendChild(subject);
+document.getElementById("btnNew").onclick = newInbox;
 
-          li.addEventListener("click", () => {
-            loadMessage(item.id);
-          });
+document.getElementById("btnCopy").onclick = ()=>{
+  if(!state) return;
+  navigator.clipboard.writeText(state.address);
+};
 
-          list.appendChild(li);
-        }
-      }
+document.getElementById("btnRefresh").onclick = loadInbox;
 
-      function renderMessage(msg) {
-        const empty = document.getElementById("msgEmpty");
-        const view = document.getElementById("msgView");
+newInbox();
 
-        if (!msg) {
-          empty.classList.remove("hidden");
-          view.classList.add("hidden");
-          return;
-        }
+</script>
 
-        empty.classList.add("hidden");
-        view.classList.remove("hidden");
-
-        document.getElementById("msgSubject").textContent =
-          msg.subject || "(no subject)";
-        document.getElementById("msgFrom").textContent = " " + (msg.from || "");
-        document.getElementById("msgTo").textContent = " " + (msg.to || "");
-        document.getElementById("msgDate").textContent =
-          " " + formatDate(msg.createdAt);
-
-        const bodyEl = document.getElementById("msgBody");
-        bodyEl.innerHTML = "";
-        if (msg.htmlBody) {
-          // very simple sanitisation: just drop script tags
-          const safe = msg.htmlBody.replace(/<script[\s\S]*?<\/script>/gi, "");
-          const div = document.createElement("div");
-          div.innerHTML = safe;
-          bodyEl.appendChild(div);
-        } else {
-          bodyEl.textContent = msg.body || "";
-        }
-      }
-
-      // ------------ data loaders ------------
-      async function ensureInbox(forceNew = false) {
-        showAlert("");
-
-        if (!forceNew) {
-          const existing = loadState();
-          if (
-            existing &&
-            existing.address &&
-            existing.inboxId &&
-            existing.expiresAt > Date.now()
-          ) {
-            appState = existing;
-            setEmailUI(existing.address);
-            startCountdown();
-            startPolling();
-            return;
-          }
-        }
-
-        try {
-          showAlert("Creating temporary inbox…", "success");
-          const data = await api("newInbox");
-          appState = {
-            address: data.address,
-            inboxId: data.inboxId,
-            expiresAt: data.expiresAt,
-          };
-          saveState(appState);
-          setEmailUI(appState.address);
-          startCountdown();
-          startPolling();
-          showAlert("");
-        } catch (err) {
-          console.error(err);
-          showAlert("Failed to generate address: " + err.message);
-          setEmailUI("-");
-        }
-      }
-
-      async function loadInbox() {
-        if (!appState || !appState.inboxId) return;
-        try {
-          const items = await api("getMessages", {
-            inboxId: appState.inboxId,
-          });
-          renderInbox(items);
-        } catch (err) {
-          console.error(err);
-          showAlert("Failed to load inbox: " + err.message);
-        }
-      }
-
-      async function loadMessage(id) {
-        try {
-          const msg = await api("readMessage", { id });
-          renderMessage(msg);
-        } catch (err) {
-          console.error(err);
-          showAlert("Failed to load message: " + err.message);
-        }
-      }
-
-      // ------------ event wiring ------------
-      function init() {
-        document.getElementById("year").textContent =
-          new Date().getFullYear();
-
-        document
-          .getElementById("btnNew")
-          .addEventListener("click", () => {
-            clearState();
-            appState = null;
-            setEmailUI("-");
-            renderInbox([]);
-            renderMessage(null);
-            ensureInbox(true);
-          });
-
-        document
-          .getElementById("btnCopy")
-          .addEventListener("click", async () => {
-            if (!appState || !appState.address) return;
-            try {
-              await navigator.clipboard.writeText(appState.address);
-              showAlert("Copied address to clipboard", "success");
-              setTimeout(() => showAlert(""), 1500);
-            } catch {
-              showAlert("Could not copy to clipboard");
-            }
-          });
-
-        document
-          .getElementById("btnExtend")
-          .addEventListener("click", () => {
-            if (!appState) return;
-            appState.expiresAt =
-              appState.expiresAt + 10 * 60 * 1000;
-            saveState(appState);
-            startCountdown();
-            showAlert("Extended inbox by 10 minutes", "success");
-            setTimeout(() => showAlert(""), 1500);
-          });
-
-        document
-          .getElementById("btnRefresh")
-          .addEventListener("click", () => {
-            loadInbox();
-          });
-
-        ensureInbox(false);
-      }
-
-      document.addEventListener("DOMContentLoaded", init);
-    </script>
-  </body>
+</body>
 </html>
-
-
