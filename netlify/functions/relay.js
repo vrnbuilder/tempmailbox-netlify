@@ -16,6 +16,16 @@ function json(statusCode, obj) {
   };
 }
 
+async function mailslurpFetch(url, options = {}) {
+  return fetch(url, {
+    ...options,
+    headers: {
+      "x-api-key": MAILSLURP_API_KEY,
+      ...(options.headers || {}),
+    },
+  });
+}
+
 exports.handler = async (event) => {
   try {
     const params = event.queryStringParameters || {};
@@ -26,17 +36,24 @@ exports.handler = async (event) => {
     }
 
     if (action === "health") {
-      return json(200, { ok: true, ts: Date.now() });
+      return json(200, {
+        ok: true,
+        service: "TempMailBox relay",
+        ts: Date.now(),
+      });
     }
 
     if (action === "newInbox") {
-      // Create a new disposable inbox
-      const res = await fetch(`${MAILSLURP_BASE}/inboxes`, {
+      const res = await mailslurpFetch(`${MAILSLURP_BASE}/inboxes`, {
         method: "POST",
         headers: {
-          "x-api-key": MAILSLURP_API_KEY,
           "content-type": "application/json",
         },
+        body: JSON.stringify({
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+          name: "TempMailBox",
+          description: "Temporary inbox created by TempMailBox",
+        }),
       });
 
       if (!res.ok) {
@@ -44,7 +61,7 @@ exports.handler = async (event) => {
         return json(res.status, {
           error: "create_inbox_failed",
           status: res.status,
-          bodySample: text.slice(0, 400),
+          bodySample: text.slice(0, 500),
         });
       }
 
@@ -52,8 +69,15 @@ exports.handler = async (event) => {
       const address = data.emailAddress;
       const inboxId = data.id;
 
+      if (!address || !inboxId) {
+        return json(500, {
+          error: "bad_inbox_response",
+          bodySample: JSON.stringify(data).slice(0, 500),
+        });
+      }
+
       const [login, domain] = String(address).split("@");
-      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+      const expiresAt = Date.now() + 10 * 60 * 1000;
 
       return json(200, {
         address,
@@ -66,61 +90,74 @@ exports.handler = async (event) => {
 
     if (action === "getMessages") {
       const inboxId = params.inboxId;
+
       if (!inboxId) {
         return json(400, { error: "missing_inboxId" });
       }
 
-      const url = new URL(`${MAILSLURP_BASE}/emails`);
-      url.searchParams.set("inboxId", inboxId);
-      url.searchParams.set("size", "50");
-      url.searchParams.set("sort", "DESC");
+      // Step 1: ask MailSlurp to wait briefly for latest email.
+      // If no email arrives, this may timeout/fail — that is OK.
+      try {
+        const waitUrl = new URL(`${MAILSLURP_BASE}/waitForLatestEmail`);
+        waitUrl.searchParams.set("inboxId", inboxId);
+        waitUrl.searchParams.set("timeout", "8000");
+        waitUrl.searchParams.set("unreadOnly", "false");
 
-      const res = await fetch(url.toString(), {
-        headers: {
-          "x-api-key": MAILSLURP_API_KEY,
-        },
-      });
+        await mailslurpFetch(waitUrl.toString());
+      } catch (err) {
+        // Ignore wait errors. We still fetch the inbox list below.
+      }
+
+      // Step 2: fetch the current email list.
+      const listUrl = new URL(`${MAILSLURP_BASE}/emails`);
+      listUrl.searchParams.set("inboxId", inboxId);
+      listUrl.searchParams.set("size", "50");
+      listUrl.searchParams.set("sort", "DESC");
+
+      const res = await mailslurpFetch(listUrl.toString());
 
       if (!res.ok) {
         const text = await res.text();
         return json(res.status, {
           error: "list_emails_failed",
           status: res.status,
-          bodySample: text.slice(0, 400),
+          bodySample: text.slice(0, 500),
         });
       }
 
       const emails = await res.json();
 
-      const mapped = emails.map((e) => ({
-        id: e.id,
-        from: e.from,
-        subject: e.subject,
-        createdAt: e.createdAt,
-        read: e.read,
-        hasAttachments: Array.isArray(e.attachments) && e.attachments.length > 0,
-        attachmentIds: e.attachments || [],
-      }));
+      const mapped = Array.isArray(emails)
+        ? emails.map((e) => ({
+            id: e.id,
+            from: e.from || "",
+            subject: e.subject || "(no subject)",
+            createdAt: e.createdAt || e.created || "",
+            read: Boolean(e.read),
+            hasAttachments:
+              Array.isArray(e.attachments) && e.attachments.length > 0,
+            attachmentIds: e.attachments || [],
+          }))
+        : [];
 
       return json(200, mapped);
     }
 
     if (action === "readMessage") {
       const id = params.id;
+
       if (!id) {
         return json(400, { error: "missing_id" });
       }
 
-      const res = await fetch(`${MAILSLURP_BASE}/emails/${id}`, {
-        headers: { "x-api-key": MAILSLURP_API_KEY },
-      });
+      const res = await mailslurpFetch(`${MAILSLURP_BASE}/emails/${id}`);
 
       if (!res.ok) {
         const text = await res.text();
         return json(res.status, {
           error: "get_email_failed",
           status: res.status,
-          bodySample: text.slice(0, 400),
+          bodySample: text.slice(0, 500),
         });
       }
 
@@ -128,11 +165,11 @@ exports.handler = async (event) => {
 
       return json(200, {
         id: email.id,
-        subject: email.subject,
-        from: email.from,
-        to: email.to,
-        createdAt: email.createdAt,
-        body: email.body,
+        subject: email.subject || "(no subject)",
+        from: email.from || "",
+        to: Array.isArray(email.to) ? email.to.join(", ") : email.to || "",
+        createdAt: email.createdAt || email.created || "",
+        body: email.body || "",
         htmlBody: email.htmlBody || null,
         attachmentIds: email.attachments || [],
       });
@@ -147,11 +184,8 @@ exports.handler = async (event) => {
         return json(400, { error: "missing_id_or_attachmentId" });
       }
 
-      const res = await fetch(
-        `${MAILSLURP_BASE}/emails/${id}/attachments/${attachmentId}`,
-        {
-          headers: { "x-api-key": MAILSLURP_API_KEY },
-        }
+      const res = await mailslurpFetch(
+        `${MAILSLURP_BASE}/emails/${id}/attachments/${attachmentId}`
       );
 
       if (!res.ok) {
@@ -159,7 +193,7 @@ exports.handler = async (event) => {
         return json(res.status, {
           error: "download_failed",
           status: res.status,
-          bodySample: text.slice(0, 400),
+          bodySample: text.slice(0, 500),
         });
       }
 
@@ -180,8 +214,10 @@ exports.handler = async (event) => {
       };
     }
 
-    // Unknown action
-    return json(400, { error: "unknown_action", action });
+    return json(400, {
+      error: "unknown_action",
+      action,
+    });
   } catch (err) {
     return json(500, {
       error: "server_error",
