@@ -19,6 +19,7 @@ async function mtFetch(path, options = {}) {
   return fetch(`${MAILTM_BASE}${path}`, {
     ...options,
     headers: {
+      accept: "application/json",
       "content-type": "application/json",
       ...(options.headers || {}),
     },
@@ -28,7 +29,7 @@ async function mtFetch(path, options = {}) {
 function randomWord() {
   const words = [
     "nova", "quick", "safe", "mail", "inbox", "pixel", "green", "fast",
-    "alpha", "cloud", "orbit", "fresh", "secure", "clean", "light"
+    "alpha", "cloud", "orbit", "fresh", "clean", "post", "box", "drop"
   ];
   return words[Math.floor(Math.random() * words.length)];
 }
@@ -39,7 +40,16 @@ function randomLocalPart() {
 }
 
 function randomPassword() {
-  return `Tmb-${crypto.randomUUID()}-${Date.now()}`;
+  return `Tmb-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+}
+
+async function readJsonOrText(res) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return { raw: text };
+  }
 }
 
 exports.handler = async (event) => {
@@ -52,25 +62,24 @@ exports.handler = async (event) => {
     }
 
     if (action === "newInbox") {
-      const domainRes = await mtFetch("/domains");
+      const domainRes = await mtFetch("/domains?page=1");
 
       if (!domainRes.ok) {
-        const text = await domainRes.text();
+        const body = await readJsonOrText(domainRes);
         return json(domainRes.status, {
           error: "domains_failed",
-          bodySample: text.slice(0, 500),
+          detail: body,
         });
       }
 
       const domainData = await domainRes.json();
-      const domains = domainData["hydra:member"] || domainData.member || [];
+      const domains = domainData["hydra:member"] || [];
 
       if (!domains.length) {
         return json(500, { error: "no_domains_available" });
       }
 
-      const usableDomains = domains.filter((d) => d.domain && !d.isPrivate);
-      const domain = (usableDomains[0] || domains[0]).domain;
+      const domain = domains[0].domain;
 
       let account = null;
       let password = null;
@@ -103,14 +112,21 @@ exports.handler = async (event) => {
       });
 
       if (!tokenRes.ok) {
-        const text = await tokenRes.text();
+        const body = await readJsonOrText(tokenRes);
         return json(tokenRes.status, {
           error: "token_failed",
-          bodySample: text.slice(0, 500),
+          detail: body,
         });
       }
 
       const tokenData = await tokenRes.json();
+
+      if (!tokenData.token) {
+        return json(500, {
+          error: "missing_token_from_mailtm",
+          detail: tokenData,
+        });
+      }
 
       return json(200, {
         address: account.address,
@@ -127,22 +143,24 @@ exports.handler = async (event) => {
         return json(400, { error: "missing_token" });
       }
 
-      const res = await mtFetch("/messages", {
+      const res = await mtFetch("/messages?page=1", {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
-        const text = await res.text();
+        const body = await readJsonOrText(res);
         return json(res.status, {
           error: "messages_failed",
-          bodySample: text.slice(0, 500),
+          status: res.status,
+          detail: body,
         });
       }
 
       const data = await res.json();
-      const messages = data["hydra:member"] || data.member || [];
+      const messages = data["hydra:member"] || [];
 
       const items = messages.map((m) => ({
         id: m.id,
@@ -163,16 +181,18 @@ exports.handler = async (event) => {
       }
 
       const res = await mtFetch(`/messages/${id}`, {
+        method: "GET",
         headers: {
-          Authorization: `Bearer ${token}`,
+          authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
-        const text = await res.text();
+        const body = await readJsonOrText(res);
         return json(res.status, {
           error: "message_failed",
-          bodySample: text.slice(0, 500),
+          status: res.status,
+          detail: body,
         });
       }
 
