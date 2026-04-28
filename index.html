@@ -28,8 +28,10 @@
 
     <div class="flex-1 min-w-0">
       <p class="text-xs text-gray-400">Your email</p>
-      <p id="emailText" class="font-mono text-sm break-all">Creating...</p>
-      <p class="text-xs text-gray-500">
+      <div class="bg-black/40 border border-gray-700 rounded px-3 py-2 mt-1">
+        <p id="emailText" class="font-mono text-sm truncate">Creating...</p>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">
         Expires in <span id="countdown">--:--</span>
       </p>
       <p id="autoStatus" class="text-xs text-gray-500 mt-1">
@@ -63,6 +65,10 @@
 </div>
 
 </div>
+
+<p class="text-[11px] text-gray-600 text-center">
+  Email inbox powered by mail.tm
+</p>
 
 </main>
 
@@ -106,9 +112,7 @@ async function api(action, params = {}) {
 
   const res = await fetch(url.toString(), {
     method: "GET",
-    headers: {
-      "cache-control": "no-store",
-    },
+    headers: { "cache-control": "no-store" },
   });
 
   const data = await res.json();
@@ -172,7 +176,7 @@ function startAutoRefresh() {
   }
 
   autoRefreshTimer = setInterval(() => {
-    if (!state || !state.inboxId) return;
+    if (!state || !state.token) return;
     if (state.expiresAt <= Date.now()) return;
     if (document.hidden) return;
 
@@ -208,7 +212,7 @@ async function newInbox() {
 }
 
 async function refreshInbox(showMessage = true) {
-  if (!state || !state.inboxId || refreshing) return;
+  if (!state || !state.token || refreshing) return;
 
   const btn = $("btnRefresh");
   const oldText = btn.textContent;
@@ -220,7 +224,7 @@ async function refreshInbox(showMessage = true) {
     btn.classList.add("opacity-70");
 
     const items = await api("getMessages", {
-      inboxId: state.inboxId,
+      token: state.token,
     });
 
     renderInbox(items);
@@ -234,9 +238,7 @@ async function refreshInbox(showMessage = true) {
     }
 
   } catch (err) {
-    if (showMessage) {
-      showPopup("Refresh failed — try again", "error");
-    }
+    if (showMessage) showPopup("Refresh failed — try again", "error");
   } finally {
     refreshing = false;
     btn.disabled = false;
@@ -249,7 +251,11 @@ async function loadMessage(id) {
   try {
     showPopup("Opening message...", "success");
 
-    const msg = await api("readMessage", { id });
+    const msg = await api("readMessage", {
+      id,
+      token: state.token,
+    });
+
     const body = $("msgBody");
 
     body.innerHTML = `
@@ -260,7 +266,7 @@ async function loadMessage(id) {
         </div>
         <div class="text-xs text-gray-400">
           <div><strong>From:</strong> ${msg.from || ""}</div>
-          <div><strong>To:</strong> ${Array.isArray(msg.to) ? msg.to.join(", ") : msg.to || ""}</div>
+          <div><strong>To:</strong> ${msg.to || ""}</div>
           <div><strong>Date:</strong> ${msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</div>
         </div>
         <div class="bg-black border border-gray-700 rounded p-3 text-sm overflow-auto">
@@ -320,5 +326,3 @@ newInbox();
 
 </body>
 </html>
-
-
