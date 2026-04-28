@@ -35,6 +35,13 @@ async function mtFetch(path, options = {}) {
   });
 }
 
+function extractArray(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data["hydra:member"])) return data["hydra:member"];
+  if (Array.isArray(data.member)) return data.member;
+  return [];
+}
+
 function randomLocalPart() {
   const words = [
     "nova", "quick", "safe", "pixel", "green", "fast",
@@ -44,9 +51,7 @@ function randomLocalPart() {
 
   const word = words[Math.floor(Math.random() * words.length)];
   const num = Math.floor(1000 + Math.random() * 9000);
-  const extra = Math.random().toString(36).slice(2, 5);
-
-  return `${word}${num}${extra}`;
+  return `${word}${num}`;
 }
 
 function randomPassword() {
@@ -78,7 +83,11 @@ exports.handler = async (event) => {
       }
 
       const domainData = await readBody(domainRes);
-      const domains = domainData["hydra:member"] || [];
+      const allDomains = extractArray(domainData);
+
+      const domains = allDomains.filter((d) => {
+        return d && d.domain && d.isActive !== false && d.isPrivate !== true;
+      });
 
       if (!domains.length) {
         return json(500, {
@@ -91,9 +100,8 @@ exports.handler = async (event) => {
 
       for (const domainObj of domains) {
         const domain = domainObj.domain;
-        if (!domain) continue;
 
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < 12; i++) {
           const address = `${randomLocalPart()}@${domain}`;
           const password = randomPassword();
 
@@ -169,7 +177,7 @@ exports.handler = async (event) => {
       }
 
       const data = await readBody(res);
-      const messages = data["hydra:member"] || [];
+      const messages = extractArray(data);
 
       const items = messages.map((m) => ({
         id: m.id,
