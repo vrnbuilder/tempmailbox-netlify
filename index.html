@@ -35,8 +35,8 @@
     </div>
 
     <div class="flex gap-2">
-      <button id="btnExtend" class="bg-purple-600 px-3 py-1 text-xs rounded">
-        +10m
+      <button id="btnExtend" class="bg-purple-600 hover:bg-purple-500 px-4 py-1 text-xs rounded font-semibold">
+        Extend +10m
       </button>
       <button id="btnCopy" class="border px-3 py-1 text-xs rounded">Copy</button>
       <button id="btnRefresh" class="border px-3 py-1 text-xs rounded">Refresh</button>
@@ -271,9 +271,22 @@ $("btnExtend").onclick = () => {
     return;
   }
 
+  const btn = $("btnExtend");
+  const oldText = btn.textContent;
+
+  btn.disabled = true;
+  btn.textContent = "Extending...";
+  btn.classList.add("opacity-70");
+
   state.expiresAt += 10 * 60 * 1000;
   updateTimer();
-  showPopup("Extended by 10 minutes", "success");
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = oldText || "Extend +10m";
+    btn.classList.remove("opacity-70");
+    showPopup("✅ Extended by 10 minutes", "success");
+  }, 400);
 };
 
 newInbox();
