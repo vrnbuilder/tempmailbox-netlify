@@ -15,6 +15,15 @@ function json(statusCode, obj) {
   };
 }
 
+async function readBody(res) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return { raw: text };
+  }
+}
+
 async function mtFetch(path, options = {}) {
   return fetch(`${MAILTM_BASE}${path}`, {
     ...options,
@@ -26,30 +35,22 @@ async function mtFetch(path, options = {}) {
   });
 }
 
-function randomWord() {
-  const words = [
-    "nova", "quick", "safe", "mail", "inbox", "pixel", "green", "fast",
-    "alpha", "cloud", "orbit", "fresh", "clean", "post", "box", "drop"
-  ];
-  return words[Math.floor(Math.random() * words.length)];
-}
-
 function randomLocalPart() {
+  const words = [
+    "nova", "quick", "safe", "pixel", "green", "fast",
+    "alpha", "cloud", "orbit", "fresh", "clean", "box",
+    "drop", "mail", "inbox", "light", "swift", "blue"
+  ];
+
+  const word = words[Math.floor(Math.random() * words.length)];
   const num = Math.floor(1000 + Math.random() * 9000);
-  return `${randomWord()}${num}`;
+  const extra = Math.random().toString(36).slice(2, 5);
+
+  return `${word}${num}${extra}`;
 }
 
 function randomPassword() {
   return `Tmb-${Math.random().toString(36).slice(2)}-${Date.now()}`;
-}
-
-async function readJsonOrText(res) {
-  const text = await res.text();
-  try {
-    return text ? JSON.parse(text) : {};
-  } catch {
-    return { raw: text };
-  }
 }
 
 exports.handler = async (event) => {
@@ -58,81 +59,91 @@ exports.handler = async (event) => {
     const action = params.action || "health";
 
     if (action === "health") {
-      return json(200, { ok: true, provider: "mail.tm", ts: Date.now() });
+      return json(200, {
+        ok: true,
+        provider: "mail.tm",
+        ts: Date.now(),
+      });
     }
 
     if (action === "newInbox") {
-      const domainRes = await mtFetch("/domains?page=1");
+      const domainRes = await mtFetch("/domains");
 
       if (!domainRes.ok) {
-        const body = await readJsonOrText(domainRes);
+        const body = await readBody(domainRes);
         return json(domainRes.status, {
           error: "domains_failed",
           detail: body,
         });
       }
 
-      const domainData = await domainRes.json();
+      const domainData = await readBody(domainRes);
       const domains = domainData["hydra:member"] || [];
 
       if (!domains.length) {
-        return json(500, { error: "no_domains_available" });
+        return json(500, {
+          error: "no_domains_available",
+          detail: domainData,
+        });
       }
 
-      const domain = domains[0].domain;
+      let lastError = null;
 
-      let account = null;
-      let password = null;
+      for (const domainObj of domains) {
+        const domain = domainObj.domain;
+        if (!domain) continue;
 
-      for (let i = 0; i < 10; i++) {
-        const address = `${randomLocalPart()}@${domain}`;
-        password = randomPassword();
+        for (let i = 0; i < 8; i++) {
+          const address = `${randomLocalPart()}@${domain}`;
+          const password = randomPassword();
 
-        const accountRes = await mtFetch("/accounts", {
-          method: "POST",
-          body: JSON.stringify({ address, password }),
-        });
+          const accountRes = await mtFetch("/accounts", {
+            method: "POST",
+            body: JSON.stringify({
+              address,
+              password,
+            }),
+          });
 
-        if (accountRes.ok) {
-          account = await accountRes.json();
-          break;
+          if (!accountRes.ok) {
+            lastError = await readBody(accountRes);
+            continue;
+          }
+
+          const account = await readBody(accountRes);
+
+          const tokenRes = await mtFetch("/token", {
+            method: "POST",
+            body: JSON.stringify({
+              address,
+              password,
+            }),
+          });
+
+          if (!tokenRes.ok) {
+            lastError = await readBody(tokenRes);
+            continue;
+          }
+
+          const tokenData = await readBody(tokenRes);
+
+          if (!tokenData.token) {
+            lastError = tokenData;
+            continue;
+          }
+
+          return json(200, {
+            address,
+            inboxId: account.id,
+            token: tokenData.token,
+            expiresAt: Date.now() + 10 * 60 * 1000,
+          });
         }
       }
 
-      if (!account || !account.address) {
-        return json(500, { error: "could_not_create_account" });
-      }
-
-      const tokenRes = await mtFetch("/token", {
-        method: "POST",
-        body: JSON.stringify({
-          address: account.address,
-          password,
-        }),
-      });
-
-      if (!tokenRes.ok) {
-        const body = await readJsonOrText(tokenRes);
-        return json(tokenRes.status, {
-          error: "token_failed",
-          detail: body,
-        });
-      }
-
-      const tokenData = await tokenRes.json();
-
-      if (!tokenData.token) {
-        return json(500, {
-          error: "missing_token_from_mailtm",
-          detail: tokenData,
-        });
-      }
-
-      return json(200, {
-        address: account.address,
-        inboxId: account.id,
-        token: tokenData.token,
-        expiresAt: Date.now() + 10 * 60 * 1000,
+      return json(500, {
+        error: "could_not_create_account",
+        detail: lastError,
       });
     }
 
@@ -143,23 +154,21 @@ exports.handler = async (event) => {
         return json(400, { error: "missing_token" });
       }
 
-      const res = await mtFetch("/messages?page=1", {
-        method: "GET",
+      const res = await mtFetch("/messages", {
         headers: {
-          authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
-        const body = await readJsonOrText(res);
+        const body = await readBody(res);
         return json(res.status, {
           error: "messages_failed",
-          status: res.status,
           detail: body,
         });
       }
 
-      const data = await res.json();
+      const data = await readBody(res);
       const messages = data["hydra:member"] || [];
 
       const items = messages.map((m) => ({
@@ -181,22 +190,20 @@ exports.handler = async (event) => {
       }
 
       const res = await mtFetch(`/messages/${id}`, {
-        method: "GET",
         headers: {
-          authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
-        const body = await readJsonOrText(res);
+        const body = await readBody(res);
         return json(res.status, {
           error: "message_failed",
-          status: res.status,
           detail: body,
         });
       }
 
-      const msg = await res.json();
+      const msg = await readBody(res);
 
       const htmlBody = Array.isArray(msg.html)
         ? msg.html.join("")
@@ -219,7 +226,10 @@ exports.handler = async (event) => {
       });
     }
 
-    return json(400, { error: "unknown_action", action });
+    return json(400, {
+      error: "unknown_action",
+      action,
+    });
   } catch (err) {
     return json(500, {
       error: "server_error",
