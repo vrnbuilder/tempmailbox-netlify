@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <title>TempMailBox</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <script src="https://cdn.tailwindcss.com"></script>
-
 </head>
 
 <body class="bg-black text-white min-h-screen flex flex-col">
@@ -16,7 +14,6 @@
     <h1 class="font-bold text-lg">TempMailBox</h1>
     <p class="text-xs text-gray-400">10 minute disposable email</p>
   </div>
-
   <button id="btnNew" class="bg-green-500 text-black px-4 py-2 rounded">
     New Address
   </button>
@@ -28,18 +25,23 @@
 
 <div class="bg-gray-900 p-4 rounded space-y-2">
   <div class="flex justify-between items-center">
+
     <div>
       <p class="text-xs text-gray-400">Your email</p>
-      <p id="shortEmail" class="text-lg font-mono"></p>
+      <p id="emailText" class="font-mono text-sm break-all"></p>
       <p class="text-xs text-gray-500">
         Expires in <span id="countdown"></span>
       </p>
     </div>
 
     <div class="flex gap-2">
+      <button id="btnExtend" class="bg-purple-600 px-3 py-1 text-xs rounded">
+        +10m
+      </button>
       <button id="btnCopy" class="border px-3 py-1 text-xs">Copy</button>
       <button id="btnRefresh" class="border px-3 py-1 text-xs">Refresh</button>
     </div>
+
   </div>
 </div>
 
@@ -52,7 +54,7 @@
 
 <div class="bg-gray-900 p-4 rounded">
   <h2 class="mb-2">Message</h2>
-  <div id="msgBody"></div>
+  <div id="msgBody" class="text-sm"></div>
 </div>
 
 </div>
@@ -63,6 +65,7 @@
 
 const API = "/.netlify/functions/relay";
 let state = null;
+let timer = null;
 
 function showAlert(msg){
   const el = document.getElementById("alert");
@@ -74,18 +77,27 @@ function showAlert(msg){
   el.classList.remove("hidden");
 }
 
-function shortEmail(email){
-  if(!email) return "";
-  const [name,domain] = email.split("@");
-  return name.slice(0,6) + "...@" + domain;
+function updateTimer(){
+  if(!state) return;
+
+  const diff = state.expiresAt - Date.now();
+
+  if(diff <= 0){
+    document.getElementById("countdown").textContent = "Expired";
+    return;
+  }
+
+  const m = Math.floor(diff / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+
+  document.getElementById("countdown").textContent =
+    `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
 }
 
 async function api(action, params={}){
   const url = new URL(API, location.origin);
   url.searchParams.set("action", action);
-  Object.entries(params).forEach(([k,v])=>{
-    url.searchParams.set(k,v);
-  });
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
 
   const res = await fetch(url);
   return res.json();
@@ -93,20 +105,24 @@ async function api(action, params={}){
 
 async function newInbox(){
   showAlert("Creating inbox...");
+
   const data = await api("newInbox");
 
   state = data;
 
-  document.getElementById("shortEmail").textContent = shortEmail(data.address);
+  document.getElementById("emailText").textContent = data.address;
+
+  clearInterval(timer);
+  timer = setInterval(updateTimer,1000);
+
+  updateTimer();
+  loadInbox();
 
   showAlert("");
-  loadInbox();
 }
 
 async function loadInbox(){
   if(!state) return;
-
-  showAlert("Checking inbox...");
 
   const items = await api("getMessages",{inboxId:state.inboxId});
 
@@ -116,34 +132,51 @@ async function loadInbox(){
   items.forEach(item=>{
     const li = document.createElement("li");
     li.className="p-2 border border-gray-700 cursor-pointer";
-    li.textContent = item.subject || "(no subject)";
+
+    li.innerHTML = `
+      <div class="text-xs text-gray-400">${item.from || ""}</div>
+      <div>${item.subject || "(no subject)"}</div>
+    `;
 
     li.onclick = ()=>loadMessage(item.id);
 
     list.appendChild(li);
   });
-
-  showAlert("");
 }
 
 async function loadMessage(id){
-  showAlert("Loading message...");
   const msg = await api("readMessage",{id});
 
   const body = document.getElementById("msgBody");
-  body.innerHTML = msg.htmlBody || msg.body || "";
 
-  showAlert("");
+  if(msg.htmlBody){
+    body.innerHTML = msg.htmlBody;
+  }else{
+    body.textContent = msg.body || "";
+  }
 }
 
 document.getElementById("btnNew").onclick = newInbox;
 
 document.getElementById("btnCopy").onclick = ()=>{
   if(!state) return;
+
   navigator.clipboard.writeText(state.address);
+  showAlert("Copied!");
+  setTimeout(()=>showAlert(""),1500);
 };
 
 document.getElementById("btnRefresh").onclick = loadInbox;
+
+document.getElementById("btnExtend").onclick = ()=>{
+  if(!state) return;
+
+  state.expiresAt += 10 * 60 * 1000;
+  updateTimer();
+
+  showAlert("Extended +10 minutes");
+  setTimeout(()=>showAlert(""),1500);
+};
 
 newInbox();
 
