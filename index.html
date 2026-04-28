@@ -63,122 +63,72 @@
 
 <script>
 
-const API = "/.netlify/functions/relay";
 let state = null;
-let timer = null;
 
-function showAlert(msg){
-  const el = document.getElementById("alert");
-  if(!msg){
-    el.classList.add("hidden");
-    return;
-  }
-  el.textContent = msg;
-  el.classList.remove("hidden");
-}
+const $ = (id) => document.getElementById(id);
 
-function updateTimer(){
-  if(!state) return;
-
-  const diff = state.expiresAt - Date.now();
-
-  if(diff <= 0){
-    document.getElementById("countdown").textContent = "Expired";
-    return;
-  }
-
-  const m = Math.floor(diff / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-
-  document.getElementById("countdown").textContent =
-    `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-}
-
-async function api(action, params={}){
-  const url = new URL(API, location.origin);
-  url.searchParams.set("action", action);
-  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
-
-  const res = await fetch(url);
-  return res.json();
-}
-
-async function newInbox(){
-  showAlert("Creating inbox...");
-
-  const data = await api("newInbox");
-
-  state = data;
-
-  document.getElementById("emailText").textContent = data.address;
-
-  clearInterval(timer);
-  timer = setInterval(updateTimer,1000);
-
-  updateTimer();
-  loadInbox();
-
-  showAlert("");
-}
-
-async function loadInbox(){
-  if(!state) return;
-
-  const items = await api("getMessages",{inboxId:state.inboxId});
-
-  const list = document.getElementById("inboxList");
-  list.innerHTML = "";
-
-  items.forEach(item=>{
-    const li = document.createElement("li");
-    li.className="p-2 border border-gray-700 cursor-pointer";
-
-    li.innerHTML = `
-      <div class="text-xs text-gray-400">${item.from || ""}</div>
-      <div>${item.subject || "(no subject)"}</div>
-    `;
-
-    li.onclick = ()=>loadMessage(item.id);
-
-    list.appendChild(li);
-  });
-}
-
-async function loadMessage(id){
-  const msg = await api("readMessage",{id});
-
-  const body = document.getElementById("msgBody");
-
-  if(msg.htmlBody){
-    body.innerHTML = msg.htmlBody;
-  }else{
-    body.textContent = msg.body || "";
-  }
-}
-
-document.getElementById("btnNew").onclick = newInbox;
-
-document.getElementById("btnCopy").onclick = ()=>{
-  if(!state) return;
-
-  navigator.clipboard.writeText(state.address);
-  showAlert("Copied!");
-  setTimeout(()=>showAlert(""),1500);
+const el = {
+  email: $("email"),
+  expires: $("expires"),
+  inbox: $("inbox"),
+  msg: $("msg"),
+  alert: $("alert"),
+  btnCopy: $("btnCopy"),
 };
 
-document.getElementById("btnRefresh").onclick = loadInbox;
+// ---------- ALERT SYSTEM ----------
+function showAlert(message, type = "success") {
+  const colors = {
+    success: "bg-green-500 text-black",
+    error: "bg-red-600 text-white",
+  };
 
-document.getElementById("btnExtend").onclick = ()=>{
-  if(!state) return;
+  el.alert.textContent = message;
+  el.alert.className = `
+    fixed top-5 left-1/2 -translate-x-1/2 z-50
+    ${colors[type]}
+    font-semibold px-5 py-3 rounded-xl shadow-lg
+  `;
 
-  state.expiresAt += 10 * 60 * 1000;
-  updateTimer();
+  setTimeout(() => {
+    el.alert.className = "hidden";
+    el.alert.textContent = "";
+  }, 1800);
+}
 
-  showAlert("Extended +10 minutes");
-  setTimeout(()=>showAlert(""),1500);
+// ---------- COPY FUNCTION ----------
+el.btnCopy.onclick = async () => {
+  if (!state || !state.address) {
+    showAlert("No email to copy", "error");
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(state.address);
+    showAlert("✅ Email copied");
+  } catch (err) {
+    showAlert("Copy failed - copy manually", "error");
+  }
 };
 
-newInbox();
+// ---------- BASIC RENDER ----------
+function render() {
+  if (!state) return;
+
+  el.email.textContent = state.address;
+  el.expires.textContent = "Ready";
+}
+
+// ---------- INIT ----------
+function init() {
+  state = {
+    address: "test@email.com", // temporary test
+  };
+
+  render();
+}
+
+init();
 
 </script>
 
