@@ -63,72 +63,220 @@
 
 <script>
 
+<script>
+const API = "/.netlify/functions/relay";
+
 let state = null;
+let timer = null;
+let refreshing = false;
 
-const $ = (id) => document.getElementById(id);
+function $(id) {
+  return document.getElementById(id);
+}
 
-const el = {
-  email: $("email"),
-  expires: $("expires"),
-  inbox: $("inbox"),
-  msg: $("msg"),
-  alert: $("alert"),
-  btnCopy: $("btnCopy"),
-};
+function showPopup(message, type = "success") {
+  const alertBox = $("alert");
 
-// ---------- ALERT SYSTEM ----------
-function showAlert(message, type = "success") {
-  const colors = {
-    success: "bg-green-500 text-black",
-    error: "bg-red-600 text-white",
-  };
-
-  el.alert.textContent = message;
-  el.alert.className = `
-    fixed top-5 left-1/2 -translate-x-1/2 z-50
-    ${colors[type]}
-    font-semibold px-5 py-3 rounded-xl shadow-lg
-  `;
+  alertBox.textContent = message;
+  alertBox.className =
+    "fixed top-5 left-1/2 -translate-x-1/2 z-50 font-semibold px-5 py-3 rounded-xl shadow-lg " +
+    (type === "success"
+      ? "bg-green-500 text-black"
+      : "bg-red-600 text-white");
 
   setTimeout(() => {
-    el.alert.className = "hidden";
-    el.alert.textContent = "";
+    alertBox.className = "hidden";
+    alertBox.textContent = "";
   }, 1800);
 }
 
-// ---------- COPY FUNCTION ----------
-el.btnCopy.onclick = async () => {
+async function api(action, params = {}) {
+  const url = new URL(API, location.origin);
+  url.searchParams.set("action", action);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "cache-control": "no-store",
+    },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Request failed");
+  }
+
+  return data;
+}
+
+function updateTimer() {
+  if (!state || !state.expiresAt) return;
+
+  const diff = state.expiresAt - Date.now();
+
+  if (diff <= 0) {
+    $("countdown").textContent = "Expired";
+    return;
+  }
+
+  const minutes = Math.floor(diff / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+
+  $("countdown").textContent =
+    `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function renderInbox(items) {
+  const list = $("inboxList");
+  list.innerHTML = "";
+
+  if (!items || items.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "text-sm text-gray-400 p-3 border border-gray-700 rounded";
+    empty.textContent = "No emails yet. Try again in a few seconds.";
+    list.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.className =
+      "p-3 border border-gray-700 rounded cursor-pointer hover:bg-gray-800 transition";
+
+    li.innerHTML = `
+      <div class="text-xs text-gray-400 truncate">${item.from || "Unknown sender"}</div>
+      <div class="font-semibold">${item.subject || "(no subject)"}</div>
+      <div class="text-xs text-gray-500">${item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</div>
+    `;
+
+    li.onclick = () => loadMessage(item.id);
+    list.appendChild(li);
+  });
+}
+
+async function newInbox() {
+  try {
+    showPopup("Creating new inbox...", "success");
+
+    const data = await api("newInbox");
+    state = data;
+
+    $("emailText").textContent = data.address;
+
+    clearInterval(timer);
+    timer = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    renderInbox([]);
+    $("msgBody").innerHTML = "";
+
+    await refreshInbox(false);
+  } catch (err) {
+    showPopup("Failed to create inbox", "error");
+  }
+}
+
+async function refreshInbox(showMessage = true) {
+  if (!state || !state.inboxId || refreshing) return;
+
+  const btn = $("btnRefresh");
+  const oldText = btn.textContent;
+
+  try {
+    refreshing = true;
+    btn.disabled = true;
+    btn.textContent = "Checking...";
+    btn.classList.add("opacity-70");
+
+    const items = await api("getMessages", {
+      inboxId: state.inboxId,
+    });
+
+    renderInbox(items);
+
+    if (showMessage) {
+      if (items.length > 0) {
+        showPopup(`Inbox updated — ${items.length} email(s) found`, "success");
+      } else {
+        showPopup("Inbox checked — no emails yet", "success");
+      }
+    }
+  } catch (err) {
+    showPopup("Refresh failed — try again", "error");
+  } finally {
+    refreshing = false;
+    btn.disabled = false;
+    btn.textContent = oldText || "Refresh";
+    btn.classList.remove("opacity-70");
+  }
+}
+
+async function loadMessage(id) {
+  try {
+    showPopup("Opening message...", "success");
+
+    const msg = await api("readMessage", { id });
+    const body = $("msgBody");
+
+    body.innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <div class="text-xs text-gray-400">Subject</div>
+          <div class="font-semibold">${msg.subject || "(no subject)"}</div>
+        </div>
+        <div class="text-xs text-gray-400">
+          <div><strong>From:</strong> ${msg.from || ""}</div>
+          <div><strong>To:</strong> ${Array.isArray(msg.to) ? msg.to.join(", ") : msg.to || ""}</div>
+          <div><strong>Date:</strong> ${msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</div>
+        </div>
+        <div class="bg-black border border-gray-700 rounded p-3 text-sm overflow-auto">
+          ${msg.htmlBody || msg.body || "No message body."}
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    showPopup("Could not open message", "error");
+  }
+}
+
+$("btnNew").onclick = newInbox;
+
+$("btnCopy").onclick = async () => {
   if (!state || !state.address) {
-    showAlert("No email to copy", "error");
+    showPopup("No email to copy", "error");
     return;
   }
 
   try {
     await navigator.clipboard.writeText(state.address);
-    showAlert("✅ Email copied");
+    showPopup("✅ Email copied to clipboard", "success");
   } catch (err) {
-    showAlert("Copy failed - copy manually", "error");
+    showPopup("Copy failed — copy manually", "error");
   }
 };
 
-// ---------- BASIC RENDER ----------
-function render() {
-  if (!state) return;
+$("btnRefresh").onclick = () => refreshInbox(true);
 
-  el.email.textContent = state.address;
-  el.expires.textContent = "Ready";
-}
+$("btnExtend").onclick = () => {
+  if (!state || !state.expiresAt) {
+    showPopup("No inbox to extend", "error");
+    return;
+  }
 
-// ---------- INIT ----------
-function init() {
-  state = {
-    address: "test@email.com", // temporary test
-  };
+  state.expiresAt += 10 * 60 * 1000;
+  updateTimer();
+  showPopup("Extended by 10 minutes", "success");
+};
 
-  render();
-}
-
-init();
+newInbox();
+</script>
 
 </script>
 
