@@ -21,16 +21,16 @@
 
 <main class="flex-1 p-4 max-w-5xl mx-auto w-full space-y-4">
 
-<div id="alert" class="hidden text-sm p-2 rounded"></div>
+<div id="alert" class="hidden"></div>
 
 <div class="bg-gray-900 p-4 rounded space-y-2">
-  <div class="flex justify-between items-center">
+  <div class="flex justify-between items-center gap-4">
 
-    <div>
+    <div class="flex-1">
       <p class="text-xs text-gray-400">Your email</p>
-      <p id="emailText" class="font-mono text-sm break-all"></p>
+      <p id="emailText" class="font-mono text-sm break-all">Creating...</p>
       <p class="text-xs text-gray-500">
-        Expires in <span id="countdown"></span>
+        Expires in <span id="countdown">--:--</span>
       </p>
     </div>
 
@@ -38,8 +38,8 @@
       <button id="btnExtend" class="bg-purple-600 px-3 py-1 text-xs rounded">
         +10m
       </button>
-      <button id="btnCopy" class="border px-3 py-1 text-xs">Copy</button>
-      <button id="btnRefresh" class="border px-3 py-1 text-xs">Refresh</button>
+      <button id="btnCopy" class="border px-3 py-1 text-xs rounded">Copy</button>
+      <button id="btnRefresh" class="border px-3 py-1 text-xs rounded">Refresh</button>
     </div>
 
   </div>
@@ -48,20 +48,20 @@
 <div class="grid md:grid-cols-2 gap-4">
 
 <div class="bg-gray-900 p-4 rounded">
-  <h2 class="mb-2">Inbox</h2>
+  <h2 class="mb-2 font-semibold">Inbox</h2>
   <ul id="inboxList" class="space-y-2"></ul>
 </div>
 
 <div class="bg-gray-900 p-4 rounded">
-  <h2 class="mb-2">Message</h2>
-  <div id="msgBody" class="text-sm"></div>
+  <h2 class="mb-2 font-semibold">Message</h2>
+  <div id="msgBody" class="text-sm text-gray-300">
+    Select a message to read it.
+  </div>
 </div>
 
 </div>
 
 </main>
-
-<script>
 
 <script>
 const API = "/.netlify/functions/relay";
@@ -175,10 +175,11 @@ async function newInbox() {
     updateTimer();
 
     renderInbox([]);
-    $("msgBody").innerHTML = "";
+    $("msgBody").innerHTML = "Select a message to read it.";
 
     await refreshInbox(false);
   } catch (err) {
+    $("emailText").textContent = "Could not create inbox";
     showPopup("Failed to create inbox", "error");
   }
 }
@@ -276,8 +277,6 @@ $("btnExtend").onclick = () => {
 };
 
 newInbox();
-</script>
-
 </script>
 
 </body>
