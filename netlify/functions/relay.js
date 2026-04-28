@@ -1,7 +1,7 @@
 // netlify/functions/relay.js
+// mail.tm backend relay for TempMailBox
 
-const MAILSLURP_API_KEY = process.env.MAILSLURP_API_KEY;
-const MAILSLURP_BASE = "https://api.mailslurp.com";
+const MAILTM_BASE = "https://api.mail.tm";
 
 function json(statusCode, obj) {
   return {
@@ -15,14 +15,31 @@ function json(statusCode, obj) {
   };
 }
 
-async function msFetch(url, options = {}) {
-  return fetch(url, {
+async function mtFetch(path, options = {}) {
+  return fetch(`${MAILTM_BASE}${path}`, {
     ...options,
     headers: {
-      "x-api-key": MAILSLURP_API_KEY,
+      "content-type": "application/json",
       ...(options.headers || {}),
     },
   });
+}
+
+function randomWord() {
+  const words = [
+    "nova", "quick", "safe", "mail", "inbox", "pixel", "green", "fast",
+    "alpha", "cloud", "orbit", "fresh", "secure", "clean", "light"
+  ];
+  return words[Math.floor(Math.random() * words.length)];
+}
+
+function randomLocalPart() {
+  const num = Math.floor(1000 + Math.random() * 9000);
+  return `${randomWord()}${num}`;
+}
+
+function randomPassword() {
+  return `Tmb-${crypto.randomUUID()}-${Date.now()}`;
 }
 
 exports.handler = async (event) => {
@@ -30,121 +47,155 @@ exports.handler = async (event) => {
     const params = event.queryStringParameters || {};
     const action = params.action || "health";
 
-    if (!MAILSLURP_API_KEY && action !== "health") {
-      return json(500, { error: "missing_api_key" });
-    }
-
     if (action === "health") {
-      return json(200, { ok: true, service: "TempMailBox relay", ts: Date.now() });
+      return json(200, { ok: true, provider: "mail.tm", ts: Date.now() });
     }
 
     if (action === "newInbox") {
-      const res = await msFetch(`${MAILSLURP_BASE}/inboxes`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          name: "TempMailBox",
-          description: "Temporary inbox created by TempMailBox",
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+      const domainRes = await mtFetch("/domains");
 
-          // Important: asks MailSlurp for shorter generated address
-          useShortAddress: true,
-
-          // Helps avoid the default ugly/blocked domain pool when available
-          useDomainPool: true,
-
-          inboxType: "HTTP",
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        return json(res.status, {
-          error: "create_inbox_failed",
-          status: res.status,
+      if (!domainRes.ok) {
+        const text = await domainRes.text();
+        return json(domainRes.status, {
+          error: "domains_failed",
           bodySample: text.slice(0, 500),
         });
       }
 
-      const data = await res.json();
+      const domainData = await domainRes.json();
+      const domains = domainData["hydra:member"] || domainData.member || [];
 
-      if (!data.emailAddress || !data.id) {
-        return json(500, {
-          error: "bad_inbox_response",
-          bodySample: JSON.stringify(data).slice(0, 500),
+      if (!domains.length) {
+        return json(500, { error: "no_domains_available" });
+      }
+
+      const usableDomains = domains.filter((d) => d.domain && !d.isPrivate);
+      const domain = (usableDomains[0] || domains[0]).domain;
+
+      let account = null;
+      let password = null;
+
+      for (let i = 0; i < 10; i++) {
+        const address = `${randomLocalPart()}@${domain}`;
+        password = randomPassword();
+
+        const accountRes = await mtFetch("/accounts", {
+          method: "POST",
+          body: JSON.stringify({ address, password }),
+        });
+
+        if (accountRes.ok) {
+          account = await accountRes.json();
+          break;
+        }
+      }
+
+      if (!account || !account.address) {
+        return json(500, { error: "could_not_create_account" });
+      }
+
+      const tokenRes = await mtFetch("/token", {
+        method: "POST",
+        body: JSON.stringify({
+          address: account.address,
+          password,
+        }),
+      });
+
+      if (!tokenRes.ok) {
+        const text = await tokenRes.text();
+        return json(tokenRes.status, {
+          error: "token_failed",
+          bodySample: text.slice(0, 500),
         });
       }
 
+      const tokenData = await tokenRes.json();
+
       return json(200, {
-        address: data.emailAddress,
-        inboxId: data.id,
+        address: account.address,
+        inboxId: account.id,
+        token: tokenData.token,
         expiresAt: Date.now() + 10 * 60 * 1000,
       });
     }
 
     if (action === "getMessages") {
-      const inboxId = params.inboxId;
+      const token = params.token;
 
-      if (!inboxId) {
-        return json(400, { error: "missing_inboxId" });
+      if (!token) {
+        return json(400, { error: "missing_token" });
       }
 
-      const res = await msFetch(
-        `${MAILSLURP_BASE}/inboxes/${inboxId}/emails/paginated?page=0&size=20&sort=DESC`
-      );
+      const res = await mtFetch("/messages", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         const text = await res.text();
         return json(res.status, {
-          error: "fetch_failed",
-          status: res.status,
+          error: "messages_failed",
           bodySample: text.slice(0, 500),
         });
       }
 
       const data = await res.json();
+      const messages = data["hydra:member"] || data.member || [];
 
-      const items = (data.content || []).map((e) => ({
-        id: e.id,
-        from: e.from || "",
-        subject: e.subject || "(no subject)",
-        createdAt: e.createdAt || "",
+      const items = messages.map((m) => ({
+        id: m.id,
+        from: m.from && m.from.address ? m.from.address : "",
+        subject: m.subject || "(no subject)",
+        createdAt: m.createdAt || "",
       }));
 
       return json(200, items);
     }
 
     if (action === "readMessage") {
+      const token = params.token;
       const id = params.id;
 
-      if (!id) {
-        return json(400, { error: "missing_id" });
+      if (!token || !id) {
+        return json(400, { error: "missing_token_or_id" });
       }
 
-      const res = await msFetch(`${MAILSLURP_BASE}/emails/${id}`);
+      const res = await mtFetch(`/messages/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!res.ok) {
         const text = await res.text();
         return json(res.status, {
-          error: "get_email_failed",
-          status: res.status,
+          error: "message_failed",
           bodySample: text.slice(0, 500),
         });
       }
 
-      const email = await res.json();
+      const msg = await res.json();
+
+      const htmlBody = Array.isArray(msg.html)
+        ? msg.html.join("")
+        : msg.html || null;
+
+      const textBody = Array.isArray(msg.text)
+        ? msg.text.join("\n")
+        : msg.text || msg.intro || "";
 
       return json(200, {
-        id: email.id,
-        subject: email.subject || "(no subject)",
-        from: email.from || "",
-        to: Array.isArray(email.to) ? email.to.join(", ") : email.to || "",
-        createdAt: email.createdAt || "",
-        body: email.body || "",
-        htmlBody: email.htmlBody || null,
-        attachmentIds: email.attachments || [],
+        id: msg.id,
+        subject: msg.subject || "(no subject)",
+        from: msg.from && msg.from.address ? msg.from.address : "",
+        to: Array.isArray(msg.to)
+          ? msg.to.map((x) => x.address).join(", ")
+          : "",
+        createdAt: msg.createdAt || "",
+        body: textBody,
+        htmlBody,
       });
     }
 
