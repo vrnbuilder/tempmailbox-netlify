@@ -49,13 +49,15 @@ function randomLocalPart() {
     "nina","sara","lena","ella","sofia"
   ];
 
-  const separators = ["", "", ".", "_"];
-  const name = names[Math.floor(Math.random() * names.length)];
-  const sep = separators[Math.floor(Math.random() * separators.length)];
+  const prefixes = ["mail", "inbox", "user", "temp", "box"];
+  const separators = ["", ".", "_"];
 
+  const name = names[Math.floor(Math.random() * names.length)];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const sep = separators[Math.floor(Math.random() * separators.length)];
   const num = Math.floor(10 + Math.random() * 990);
 
-  return `${name}${sep}${num}`;
+  return `${prefix}${sep}${name}${num}`;
 }
 
 function randomPassword() {
