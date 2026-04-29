@@ -43,15 +43,30 @@ function extractArray(data) {
 }
 
 function randomLocalPart() {
-  const words = [
-    "nova", "quick", "safe", "pixel", "green", "fast",
-    "alpha", "cloud", "orbit", "fresh", "clean", "box",
-    "drop", "mail", "inbox", "light", "swift", "blue"
+  const names = [
+    "alex", "sam", "max", "leo", "ryan", "adam", "ben", "jack",
+    "noah", "omar", "zane", "luca", "milan", "aria", "maya",
+    "nina", "sara", "lena", "ella", "sofia", "nova", "pixel",
+    "orbit", "cloud", "fresh", "swift", "green", "blue", "quick"
   ];
 
-  const word = words[Math.floor(Math.random() * words.length)];
-  const num = Math.floor(1000 + Math.random() * 9000);
-  return `${word}${num}`;
+  const separators = ["", "", "", ".", "_"];
+  const name = names[Math.floor(Math.random() * names.length)];
+  const second = names[Math.floor(Math.random() * names.length)];
+  const sep = separators[Math.floor(Math.random() * separators.length)];
+  const num = Math.floor(10 + Math.random() * 8999);
+
+  const patterns = [
+    `${name}${num}`,
+    `${name}${sep}${num}`,
+    `${name}${sep}${second}${num}`,
+    `${name}${second}${num}`,
+  ];
+
+  return patterns[Math.floor(Math.random() * patterns.length)]
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]/g, "")
+    .slice(0, 22);
 }
 
 function randomPassword() {
@@ -101,7 +116,7 @@ exports.handler = async (event) => {
       for (const domainObj of domains) {
         const domain = domainObj.domain;
 
-        for (let i = 0; i < 12; i++) {
+        for (let i = 0; i < 15; i++) {
           const address = `${randomLocalPart()}@${domain}`;
           const password = randomPassword();
 
