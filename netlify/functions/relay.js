@@ -44,29 +44,18 @@ function extractArray(data) {
 
 function randomLocalPart() {
   const names = [
-    "alex", "sam", "max", "leo", "ryan", "adam", "ben", "jack",
-    "noah", "omar", "zane", "luca", "milan", "aria", "maya",
-    "nina", "sara", "lena", "ella", "sofia", "nova", "pixel",
-    "orbit", "cloud", "fresh", "swift", "green", "blue", "quick"
+    "alex","sam","max","leo","ryan","adam","ben","jack",
+    "noah","omar","zane","luca","milan","aria","maya",
+    "nina","sara","lena","ella","sofia"
   ];
 
-  const separators = ["", "", "", ".", "_"];
+  const separators = ["", "", ".", "_"];
   const name = names[Math.floor(Math.random() * names.length)];
-  const second = names[Math.floor(Math.random() * names.length)];
   const sep = separators[Math.floor(Math.random() * separators.length)];
-  const num = Math.floor(10 + Math.random() * 8999);
 
-  const patterns = [
-    `${name}${num}`,
-    `${name}${sep}${num}`,
-    `${name}${sep}${second}${num}`,
-    `${name}${second}${num}`,
-  ];
+  const num = Math.floor(10 + Math.random() * 990);
 
-  return patterns[Math.floor(Math.random() * patterns.length)]
-    .toLowerCase()
-    .replace(/[^a-z0-9._-]/g, "")
-    .slice(0, 22);
+  return `${name}${sep}${num}`;
 }
 
 function randomPassword() {
