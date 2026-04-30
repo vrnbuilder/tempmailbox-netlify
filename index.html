@@ -209,14 +209,14 @@ function startAutoRefresh() {
     clearInterval(autoRefreshTimer);
   }
 
-  autoRefreshTimer = setInterval(() => {
-    if (!state || !state.token) return;
-    if (state.expiresAt <= Date.now()) return;
-    if (document.hidden) return;
+  // autoRefreshTimer = setInterval(() => {
+//   if (!state || !state.token) return;
+//   if (state.expiresAt <= Date.now()) return;
+//   if (document.hidden) return;
 
-    refreshInbox(false);
-    $("autoStatus").textContent = "Auto-refresh checked just now";
-  }, 5000);
+//   refreshInbox(false);
+//   $("autoStatus").textContent = "Auto-refresh checked just now";
+// }, 5000);
 }
 
 async function newInbox() {
