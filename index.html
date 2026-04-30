@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ShortLifeMail — Free Temporary Email</title>
+<title>ShortLifeMail — Burner Email Generator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="ShortLifeMail gives you a free temporary email inbox with no signup. Create an instant disposable email address and avoid spam.">
+<meta name="description" content="Create a free burner email in one click. Use ShortLifeMail to avoid spam, protect your real inbox, and receive temporary emails without signup.">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -40,12 +40,13 @@
       <p class="text-xs text-gray-500 mt-2">
         Expires in <span id="countdown">--:--</span>
       </p>
+
       <p class="text-xs text-gray-400 mt-1">
-  ⚠️ Deletes in 10 minutes — extend before it expires
-     </p>
+        ⚠️ Deletes in 10 minutes — extend before it expires
+      </p>
 
       <p id="autoStatus" class="text-xs text-gray-500 mt-1">
-        Auto-refresh active
+        Manual refresh only — click Refresh to check inbox
       </p>
 
       <p class="text-xs text-gray-400 mt-2">
@@ -77,6 +78,10 @@
 <section class="bg-gray-900 p-4 rounded">
   <h2 class="mb-2 font-semibold text-lg">Inbox</h2>
   <ul id="inboxList" class="space-y-2"></ul>
+
+  <p class="text-xs text-gray-500 mt-3">
+    Click Refresh to check for new emails. Refreshing too often wastes server credits, so refresh is limited to once every 10 seconds.
+  </p>
 
   <div class="mt-5 text-center text-xs text-gray-600 border border-dashed border-gray-800 rounded p-4">
     Ad space — Google AdSense coming soon
@@ -112,7 +117,7 @@ const API = "/.netlify/functions/relay";
 let state = null;
 let timer = null;
 let refreshing = false;
-let autoRefreshTimer = null;
+let lastRefresh = 0;
 
 function $(id) {
   return document.getElementById(id);
@@ -131,7 +136,7 @@ function showPopup(message, type = "success") {
   setTimeout(() => {
     alertBox.className = "hidden";
     alertBox.textContent = "";
-  }, 1800);
+  }, 2000);
 }
 
 async function api(action, params = {}) {
@@ -149,7 +154,13 @@ async function api(action, params = {}) {
     headers: { "cache-control": "no-store" },
   });
 
-  const data = await res.json();
+  let data;
+
+  try {
+    data = await res.json();
+  } catch (err) {
+    throw new Error("Invalid server response");
+  }
 
   if (!res.ok || data.error) {
     throw new Error(data.error || "Request failed");
@@ -165,7 +176,7 @@ function updateTimer() {
 
   if (diff <= 0) {
     $("countdown").textContent = "Expired";
-    $("autoStatus").textContent = "Inbox expired";
+    $("autoStatus").textContent = "Inbox expired — create a new address";
     return;
   }
 
@@ -183,7 +194,7 @@ function renderInbox(items) {
   if (!items || items.length === 0) {
     const empty = document.createElement("li");
     empty.className = "text-sm text-gray-400 p-3 border border-gray-700 rounded";
-    empty.textContent = "No emails yet. Auto-refresh is checking every 5 seconds.";
+    empty.textContent = "No emails yet. Wait 20–30 seconds, then click Refresh.";
     list.appendChild(empty);
     return;
   }
@@ -204,27 +215,13 @@ function renderInbox(items) {
   });
 }
 
-function startAutoRefresh() {
-  if (autoRefreshTimer) {
-    clearInterval(autoRefreshTimer);
-  }
-
-  // autoRefreshTimer = setInterval(() => {
-//   if (!state || !state.token) return;
-//   if (state.expiresAt <= Date.now()) return;
-//   if (document.hidden) return;
-
-//   refreshInbox(false);
-//   $("autoStatus").textContent = "Auto-refresh checked just now";
-// }, 5000);
-}
-
 async function newInbox() {
   try {
     showPopup("Creating new inbox...", "success");
 
     const data = await api("newInbox");
     state = data;
+    lastRefresh = 0;
 
     $("emailText").textContent = data.address;
 
@@ -234,13 +231,11 @@ async function newInbox() {
 
     renderInbox([]);
     $("msgBody").innerHTML = "Select a message to read it.";
-    $("autoStatus").textContent = "Auto-refresh active";
-
-    await refreshInbox(false);
-    startAutoRefresh();
+    $("autoStatus").textContent = "Manual refresh only — click Refresh to check inbox";
 
   } catch (err) {
     $("emailText").textContent = "Could not create inbox";
+    $("autoStatus").textContent = "Inbox creation failed";
     showPopup("Failed to create inbox", "error");
   }
 }
@@ -262,6 +257,7 @@ async function refreshInbox(showMessage = true) {
     });
 
     renderInbox(items);
+    $("autoStatus").textContent = "Inbox checked manually";
 
     if (showMessage) {
       if (items.length > 0) {
@@ -272,7 +268,10 @@ async function refreshInbox(showMessage = true) {
     }
 
   } catch (err) {
-    if (showMessage) showPopup("Refresh failed — try again", "error");
+    if (showMessage) {
+      showPopup("Refresh failed — try again later", "error");
+    }
+    $("autoStatus").textContent = "Refresh failed — wait and try again";
   } finally {
     refreshing = false;
     btn.disabled = false;
@@ -281,7 +280,34 @@ async function refreshInbox(showMessage = true) {
   }
 }
 
+function safeRefresh() {
+  if (!state || !state.token) {
+    showPopup("Create an inbox first", "error");
+    return;
+  }
+
+  if (state.expiresAt <= Date.now()) {
+    showPopup("Inbox expired — create a new address", "error");
+    return;
+  }
+
+  const now = Date.now();
+
+  if (now - lastRefresh < 10000) {
+    showPopup("Wait 10 seconds before refreshing again", "error");
+    return;
+  }
+
+  lastRefresh = now;
+  refreshInbox(true);
+}
+
 async function loadMessage(id) {
+  if (!state || !state.token) {
+    showPopup("Create an inbox first", "error");
+    return;
+  }
+
   try {
     showPopup("Opening message...", "success");
 
@@ -329,7 +355,7 @@ $("btnCopy").onclick = async () => {
   }
 };
 
-$("btnRefresh").onclick = () => refreshInbox(true);
+$("btnRefresh").onclick = safeRefresh;
 
 $("btnExtend").onclick = () => {
   if (!state || !state.expiresAt) {
@@ -349,7 +375,7 @@ $("btnExtend").onclick = () => {
 
   setTimeout(() => {
     btn.disabled = false;
-    btn.textContent = oldText || "Extend +10m";
+    btn.textContent = oldText || "Extend +10 min";
     btn.classList.remove("opacity-70");
     showPopup("✅ Extended by 10 minutes", "success");
   }, 400);
