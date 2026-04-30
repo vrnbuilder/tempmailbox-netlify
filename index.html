@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>TempMailBox</title>
+<title>ShortLifeMail — Free Temporary Email</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="ShortLifeMail gives you a free temporary email inbox with no signup. Create an instant disposable email address and avoid spam.">
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -11,16 +12,14 @@
 
 <header class="border-b border-gray-800">
   <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-
     <div>
-      <h1 class="font-bold text-lg">TempMailBox</h1>
-      <p class="text-xs text-gray-400">10 minute disposable email</p>
+      <h1 class="font-bold text-xl">ShortLifeMail</h1>
+      <p class="text-xs text-gray-400">Free temporary email — no signup, instant inbox</p>
     </div>
 
-    <button id="btnNew" class="bg-green-500 text-black px-4 py-2 rounded">
+    <button id="btnNew" class="bg-green-500 hover:bg-green-400 text-black px-5 py-2 rounded font-medium">
       New Address
     </button>
-
   </div>
 </header>
 
@@ -28,19 +27,26 @@
 
 <div id="alert" class="hidden"></div>
 
-<div class="bg-gray-900 p-4 rounded space-y-3">
+<section class="bg-gray-900 p-4 rounded space-y-3">
   <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
 
     <div class="flex-1 min-w-0">
-      <p class="text-xs text-gray-400">Your email</p>
+      <p class="text-xs text-gray-400">Your temporary email</p>
+
       <div class="bg-black/40 border border-gray-700 rounded px-3 py-2 mt-1">
         <p id="emailText" class="font-mono text-sm truncate">Creating...</p>
       </div>
+
       <p class="text-xs text-gray-500 mt-2">
         Expires in <span id="countdown">--:--</span>
       </p>
+
       <p id="autoStatus" class="text-xs text-gray-500 mt-1">
         Auto-refresh active
+      </p>
+
+      <p class="text-xs text-gray-400 mt-2">
+        ✅ No signup • ✅ Auto delete • ✅ 100% private
       </p>
     </div>
 
@@ -48,28 +54,48 @@
       <button id="btnExtend" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs rounded font-semibold">
         Extend +10m
       </button>
-      <button id="btnCopy" class="border px-4 py-2 text-xs rounded">Copy</button>
-      <button id="btnRefresh" class="border px-4 py-2 text-xs rounded">Refresh</button>
+      <button id="btnCopy" class="border border-gray-400 hover:bg-gray-800 px-4 py-2 text-xs rounded">
+        Copy
+      </button>
+      <button id="btnRefresh" class="border border-gray-400 hover:bg-gray-800 px-4 py-2 text-xs rounded">
+        Refresh
+      </button>
     </div>
 
   </div>
-</div>
+</section>
+
+<p class="text-sm text-gray-300">
+  Use this temporary email to sign up on websites without spam.
+</p>
 
 <div class="grid md:grid-cols-2 gap-4">
 
-<div class="bg-gray-900 p-4 rounded">
-  <h2 class="mb-2 font-semibold">Inbox</h2>
+<section class="bg-gray-900 p-4 rounded">
+  <h2 class="mb-2 font-semibold text-lg">Inbox</h2>
   <ul id="inboxList" class="space-y-2"></ul>
-</div>
 
-<div class="bg-gray-900 p-4 rounded">
-  <h2 class="mb-2 font-semibold">Message</h2>
+  <div class="mt-5 text-center text-xs text-gray-600 border border-dashed border-gray-800 rounded p-4">
+    Ad space — Google AdSense coming soon
+  </div>
+</section>
+
+<section class="bg-gray-900 p-4 rounded">
+  <h2 class="mb-2 font-semibold text-lg">Message</h2>
   <div id="msgBody" class="text-sm text-gray-300">
     Select a message to read it.
   </div>
-</div>
+</section>
 
 </div>
+
+<section class="bg-gray-950 border border-gray-800 rounded p-5 mt-6 text-gray-300 text-sm leading-6">
+  <h2 class="text-white text-lg font-bold mb-2">What is ShortLifeMail?</h2>
+  <p>
+    ShortLifeMail gives you a temporary email address you can use when signing up online.
+    It helps protect your real inbox from spam, newsletters, and unwanted messages.
+  </p>
+</section>
 
 <p class="text-[11px] text-gray-600 text-center">
   Email inbox powered by mail.tm
