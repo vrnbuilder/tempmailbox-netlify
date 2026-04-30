@@ -14,7 +14,7 @@
   <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
     <div>
       <h1 class="font-bold text-xl">ShortLifeMail</h1>
-      <p class="text-xs text-gray-400">Free temporary email — no signup, instant inbox</p>
+      <p class="text-xs text-gray-400">Create a burner email in 1 click — avoid spam instantly</p>
     </div>
 
     <button id="btnNew" class="bg-green-500 hover:bg-green-400 text-black px-5 py-2 rounded font-medium">
@@ -40,19 +40,22 @@
       <p class="text-xs text-gray-500 mt-2">
         Expires in <span id="countdown">--:--</span>
       </p>
+      <p class="text-xs text-gray-400 mt-1">
+  ⚠️ Deletes in 10 minutes — extend before it expires
+     </p>
 
       <p id="autoStatus" class="text-xs text-gray-500 mt-1">
         Auto-refresh active
       </p>
 
       <p class="text-xs text-gray-400 mt-2">
-        ✅ No signup • ✅ Auto delete • ✅ 100% private
+        ✅ No signup • ✅ Extend anytime • ✅ Auto deletes • ✅ No tracking
       </p>
     </div>
 
     <div class="flex flex-wrap gap-2">
       <button id="btnExtend" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs rounded font-semibold">
-        Extend +10m
+        Extend +10 min
       </button>
       <button id="btnCopy" class="border border-gray-400 hover:bg-gray-800 px-4 py-2 text-xs rounded">
         Copy
@@ -66,7 +69,7 @@
 </section>
 
 <p class="text-sm text-gray-300">
-  Use this temporary email to sign up on websites without spam.
+  Use this email to sign up on websites without exposing your real inbox.
 </p>
 
 <div class="grid md:grid-cols-2 gap-4">
