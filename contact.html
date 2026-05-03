@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Contact | ShortLifeMail</title>
+  <meta name="description" content="Contact ShortLifeMail for support, feedback, privacy questions, and general enquiries." />
+  <meta name="robots" content="index, follow" />
+
+  <style>
+    :root {
+      --bg: #08080c;
+      --card: #12121a;
+      --card-2: #181824;
+      --text: #f5f5f7;
+      --muted: #b7b7c8;
+      --soft: #8f8fa3;
+      --purple: #8b5cf6;
+      --purple-2: #a78bfa;
+      --green: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 35%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    a {
+      color: var(--purple-2);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .site-header {
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 8, 12, 0.78);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .nav {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1.12rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple), #5b21b6);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.35);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 56px 20px 70px;
+    }
+
+    .hero {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.08;
+      letter-spacing: -0.055em;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.08rem;
+      max-width: 760px;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 22px;
+      margin-top: 24px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.03));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.35rem;
+      letter-spacing: -0.025em;
+    }
+
+    p {
+      color: var(--muted);
+      margin: 0 0 14px;
+    }
+
+    .contact-box {
+      margin-top: 18px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 18px;
+      padding: 18px;
+    }
+
+    .contact-label {
+      color: var(--soft);
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .contact-value {
+      color: var(--text);
+      font-size: 1.05rem;
+      font-weight: 800;
+      word-break: break-word;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 14px;
+      min-height: 46px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(139, 92, 246, 0.5);
+      background: linear-gradient(135deg, var(--purple), #6d28d9);
+      color: white;
+      font-weight: 800;
+      box-shadow: 0 12px 34px rgba(139, 92, 246, 0.28);
+      text-decoration: none;
+    }
+
+    .button:hover {
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 22px;
+      color: var(--muted);
+    }
+
+    li {
+      margin-bottom: 9px;
+    }
+
+    .small {
+      color: var(--soft);
+      font-size: 0.94rem;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 20px;
+      color: var(--soft);
+      text-align: center;
+      font-size: 0.92rem;
+    }
+
+    .footer-links {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav {
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        width: 100%;
+      }
+
+      .card {
+        padding: 22px;
+        border-radius: 20px;
+      }
+
+      .wrap {
+        padding-top: 38px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/">
+        <span class="brand-badge">✉️</span>
+        <span>ShortLifeMail</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/contact.html">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Support & Feedback</span>
+      <h1>Contact ShortLifeMail</h1>
+      <p class="lead">
+        Have a question, found a bug, or want to send feedback? Contact us using the details below.
+      </p>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Get in touch</h2>
+        <p>
+          For support, privacy questions, bug reports, or general enquiries, you can contact ShortLifeMail by email.
+        </p>
+
+        <div class="contact-box">
+          <div class="contact-label">Email</div>
+          <div class="contact-value">support@shortlifemail.com</div>
+          <a class="button" href="mailto:support@shortlifemail.com?subject=ShortLifeMail%20Support%20Request">
+            Email ShortLifeMail
+          </a>
+        </div>
+
+        <p class="small" style="margin-top: 16px;">
+          Replace this email address with your real support email before submitting the site to AdSense.
+        </p>
+      </article>
+
+      <aside class="card">
+        <h2>Before contacting us</h2>
+        <ul>
+          <li>Temporary emails are not suitable for important accounts.</li>
+          <li>Inbox delivery is not guaranteed.</li>
+          <li>Some websites block temporary email addresses.</li>
+          <li>Manual refresh may be required to check new messages.</li>
+          <li>Never use temporary email for banking, medical, legal, or password recovery messages.</li>
+        </ul>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div>© 2026 ShortLifeMail. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/terms.html">Terms of Use</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </footer>
+</body>
+</html>
