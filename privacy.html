@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Privacy Policy | ShortLifeMail</title>
+  <meta name="description" content="Privacy Policy for ShortLifeMail. Learn how our temporary email service handles privacy, cookies, advertising, and user data." />
+  <meta name="robots" content="index, follow" />
+
+  <style>
+    :root {
+      --bg: #08080c;
+      --card: #12121a;
+      --card-2: #181824;
+      --text: #f5f5f7;
+      --muted: #b7b7c8;
+      --soft: #8f8fa3;
+      --purple: #8b5cf6;
+      --purple-2: #a78bfa;
+      --green: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 35%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    a {
+      color: var(--purple-2);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .site-header {
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 8, 12, 0.78);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .nav {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1.12rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple), #5b21b6);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.35);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 56px 20px 70px;
+    }
+
+    .hero {
+      margin-bottom: 24px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 18px 0 12px;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      line-height: 1.08;
+      letter-spacing: -0.055em;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.08rem;
+      max-width: 760px;
+      margin: 0;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.03));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin-top: 22px;
+    }
+
+    h2 {
+      margin: 30px 0 10px;
+      font-size: 1.35rem;
+      letter-spacing: -0.025em;
+    }
+
+    h2:first-child {
+      margin-top: 0;
+    }
+
+    p {
+      color: var(--muted);
+      margin: 0 0 14px;
+    }
+
+    ul {
+      margin: 8px 0 18px;
+      padding-left: 22px;
+      color: var(--muted);
+    }
+
+    li {
+      margin-bottom: 9px;
+    }
+
+    .notice {
+      border: 1px solid rgba(34, 197, 94, 0.28);
+      background: rgba(34, 197, 94, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      color: #d7ffe5;
+      margin: 18px 0;
+    }
+
+    .notice strong {
+      color: #ffffff;
+    }
+
+    .updated {
+      color: var(--soft);
+      font-size: 0.95rem;
+      margin-top: 8px;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 20px;
+      color: var(--soft);
+      text-align: center;
+      font-size: 0.92rem;
+    }
+
+    .footer-links {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      .nav {
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        width: 100%;
+      }
+
+      .card {
+        padding: 22px;
+        border-radius: 20px;
+      }
+
+      .wrap {
+        padding-top: 38px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/">
+        <span class="brand-badge">✉️</span>
+        <span>ShortLifeMail</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/contact.html">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <span class="eyebrow">Privacy & Data</span>
+      <h1>Privacy Policy</h1>
+      <p class="lead">
+        ShortLifeMail is designed to help you create temporary email addresses quickly and privately.
+        This policy explains what information may be processed when you use our website.
+      </p>
+      <p class="updated">Last updated: 3 May 2026</p>
+    </section>
+
+    <article class="card">
+      <div class="notice">
+        <strong>Simple version:</strong> ShortLifeMail does not ask you to create an account, and we do not require your name, password, phone number, or personal email address to use the basic temporary inbox tool.
+      </div>
+
+      <h2>1. Who we are</h2>
+      <p>
+        ShortLifeMail provides a temporary email tool that allows users to generate short-life email addresses for receiving messages. The website is intended for privacy, testing, sign-up verification, and reducing spam in your personal inbox.
+      </p>
+
+      <h2>2. Information you provide</h2>
+      <p>
+        You can use ShortLifeMail without creating an account. We do not ask for your name, phone number, home address, password, or personal email address to generate a temporary email address.
+      </p>
+      <p>
+        If you contact us directly, we may receive the information you choose to send, such as your email address, name, and message content.
+      </p>
+
+      <h2>3. Temporary email messages</h2>
+      <p>
+        Temporary inboxes are not private personal mailboxes. They are designed for short-term use only. Do not use ShortLifeMail for sensitive information such as banking, medical, legal, government, identity, password recovery, or confidential business messages.
+      </p>
+      <p>
+        Messages sent to temporary addresses may be processed by third-party email infrastructure or temporary email API providers in order to display inbox results. ShortLifeMail does not guarantee message delivery, storage, privacy, or availability.
+      </p>
+
+      <h2>4. Cookies and similar technologies</h2>
+      <p>
+        ShortLifeMail may use cookies, local storage, or similar browser technologies to keep the site working, remember basic preferences, improve performance, measure traffic, and support advertising.
+      </p>
+
+      <h2>5. Advertising and Google AdSense</h2>
+      <p>
+        We may display advertising on ShortLifeMail, including ads served by Google AdSense or other third-party advertising partners.
+      </p>
+      <p>
+        Third-party vendors, including Google, use cookies to serve ads based on a user's previous visits to this website or other websites. Google's use of advertising cookies enables it and its partners to serve ads to users based on their visit to ShortLifeMail and/or other sites on the Internet.
+      </p>
+      <p>
+        Users may opt out of personalised advertising by visiting Google's Ads Settings. Users may also be able to opt out of some third-party vendors' use of cookies for personalised advertising by visiting industry opt-out pages such as aboutads.info.
+      </p>
+
+      <h2>6. Analytics</h2>
+      <p>
+        We may use analytics tools to understand how visitors use the website, such as which pages are visited, general device type, browser type, country-level location, and basic usage patterns. This helps us improve the website and fix problems.
+      </p>
+      <p>
+        Analytics data is generally aggregated and does not require you to create an account.
+      </p>
+
+      <h2>7. Server logs</h2>
+      <p>
+        Like most websites, our hosting provider may automatically process basic technical information such as IP address, browser type, device type, referring page, date/time of visit, and pages requested. This is used for security, debugging, abuse prevention, and website operation.
+      </p>
+
+      <h2>8. How we use information</h2>
+      <ul>
+        <li>To provide and operate the temporary email tool.</li>
+        <li>To display inbox messages requested by the user.</li>
+        <li>To improve website performance, design, and reliability.</li>
+        <li>To prevent abuse, spam, attacks, or misuse of the service.</li>
+        <li>To respond to messages sent through our contact page.</li>
+        <li>To support analytics and advertising where allowed by law.</li>
+      </ul>
+
+      <h2>9. What you should not use ShortLifeMail for</h2>
+      <p>
+        You should not use ShortLifeMail for anything important, confidential, illegal, harmful, abusive, or long-term. Temporary email addresses can expire, stop working, or become inaccessible.
+      </p>
+      <ul>
+        <li>Do not use it for banking or financial accounts.</li>
+        <li>Do not use it for medical, legal, or government services.</li>
+        <li>Do not use it for password recovery.</li>
+        <li>Do not use it to send or receive illegal, abusive, or harmful content.</li>
+        <li>Do not use it where you need permanent access to an inbox.</li>
+      </ul>
+
+      <h2>10. Third-party services</h2>
+      <p>
+        ShortLifeMail may rely on third-party services for hosting, email processing, analytics, advertising, security, or performance. These services may process technical data according to their own privacy policies.
+      </p>
+
+      <h2>11. Data retention</h2>
+      <p>
+        Temporary email messages are intended to be short-lived. However, exact retention periods may depend on the technical providers used to power the temporary email functionality. We do not recommend relying on ShortLifeMail for permanent message storage.
+      </p>
+
+      <h2>12. Your choices</h2>
+      <p>
+        You can control cookies through your browser settings. You can also use browser privacy settings or extensions to limit tracking technologies. Blocking some cookies may affect how certain website features work.
+      </p>
+
+      <h2>13. Children's privacy</h2>
+      <p>
+        ShortLifeMail is not intended for children under 13. We do not knowingly collect personal information from children.
+      </p>
+
+      <h2>14. Changes to this policy</h2>
+      <p>
+        We may update this Privacy Policy from time to time. When we make changes, we will update the “Last updated” date at the top of this page.
+      </p>
+
+      <h2>15. Contact us</h2>
+      <p>
+        If you have questions about this Privacy Policy, please contact us through our contact page:
+        <a href="/contact.html">Contact ShortLifeMail</a>.
+      </p>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div>© 2026 ShortLifeMail. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/terms.html">Terms of Use</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </footer>
+</body>
+</html>
