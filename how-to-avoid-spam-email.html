@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>How to Avoid Spam Email and Protect Your Inbox | ShortLifeMail</title>
+  <meta name="description" content="Learn practical ways to avoid spam email, protect your real inbox, use temporary email safely, and reduce unwanted marketing messages." />
+  <meta name="robots" content="index, follow" />
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2501807800717598"
+     crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --bg: #08080c;
+      --card: #12121a;
+      --text: #f5f5f7;
+      --muted: #b7b7c8;
+      --soft: #8f8fa3;
+      --purple: #8b5cf6;
+      --purple-2: #a78bfa;
+      --green: #22c55e;
+      --red: #fb7185;
+      --yellow: #facc15;
+      --border: rgba(255, 255, 255, 0.1);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 35%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    a {
+      color: var(--purple-2);
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .site-header {
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 8, 12, 0.84);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .nav {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1.12rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple), #5b21b6);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.35);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 56px 20px 70px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      font-size: clamp(2rem, 5vw, 3.35rem);
+      line-height: 1.08;
+      letter-spacing: -0.055em;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.08rem;
+      max-width: 790px;
+      margin: 0;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.03));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 30px;
+      margin-top: 26px;
+    }
+
+    h2 {
+      margin: 32px 0 10px;
+      font-size: 1.45rem;
+      letter-spacing: -0.025em;
+    }
+
+    h2:first-child {
+      margin-top: 0;
+    }
+
+    h3 {
+      margin: 24px 0 8px;
+      font-size: 1.08rem;
+    }
+
+    p {
+      color: var(--muted);
+      margin: 0 0 15px;
+    }
+
+    ul, ol {
+      margin: 8px 0 18px;
+      padding-left: 22px;
+      color: var(--muted);
+    }
+
+    li {
+      margin-bottom: 9px;
+    }
+
+    .notice {
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      background: rgba(34, 197, 94, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      color: #d7ffe5;
+      margin: 20px 0;
+    }
+
+    .notice strong {
+      color: #ffffff;
+    }
+
+    .warning {
+      border: 1px solid rgba(251, 113, 133, 0.3);
+      background: rgba(251, 113, 133, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      color: #ffe1e7;
+      margin: 20px 0;
+    }
+
+    .warning strong {
+      color: #ffffff;
+    }
+
+    .tips {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .tip {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tip h3 {
+      margin-top: 0;
+      color: var(--text);
+    }
+
+    .related {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .related a {
+      display: block;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .related a span {
+      display: block;
+      margin-top: 5px;
+      color: var(--soft);
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--purple), #6d28d9);
+      color: #ffffff;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .cta:hover {
+      text-decoration: none;
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 20px;
+      color: var(--soft);
+      text-align: center;
+      font-size: 0.92rem;
+    }
+
+    .footer-links {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 700px) {
+      .card {
+        padding: 22px;
+        border-radius: 20px;
+      }
+
+      .tips,
+      .related {
+        grid-template-columns: 1fr;
+      }
+
+      .wrap {
+        padding-top: 38px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/">
+        <span class="brand-badge">✉️</span>
+        <span>ShortLifeMail</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/contact.html">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <span class="eyebrow">Inbox Protection Guide</span>
+      <h1>How to Avoid Spam Email and Protect Your Inbox</h1>
+      <p class="lead">
+        Spam email wastes time, clutters your inbox, and can expose you to scams. The best defence is not one trick. It is a set of simple habits that reduce how often your real email address gets shared, sold, leaked, or misused.
+      </p>
+    </section>
+
+    <article class="card">
+      <h2>Why spam email happens</h2>
+      <p>
+        Spam usually starts when your email address ends up on a mailing list, marketing database, leaked website database, public page, or low-quality sign-up form. Once your address is shared widely, it can be copied, sold, scraped, and targeted again and again.
+      </p>
+      <p>
+        You cannot remove every spam risk, but you can reduce the chances by being more careful with where you enter your real email address.
+      </p>
+
+      <div class="notice">
+        <strong>Simple rule:</strong> do not give your real email address to every website. Treat your main inbox like something valuable.
+      </div>
+
+      <h2>1. Use temporary email for low-risk sign-ups</h2>
+      <p>
+        A temporary email address is useful when a website asks for an email but you do not need a long-term relationship with that website. For example, you may only need to receive a confirmation message, download a free file, test a form, or access a one-time resource.
+      </p>
+      <p>
+        This keeps your real inbox away from websites that may later send newsletters, promotions, or unwanted follow-up emails.
+      </p>
+
+      <h3>Good situations for temporary email</h3>
+      <ul>
+        <li>Testing a website or app.</li>
+        <li>Receiving a low-risk confirmation email.</li>
+        <li>Downloading a free file.</li>
+        <li>Signing up for something you may not use again.</li>
+        <li>Avoiding unnecessary newsletters.</li>
+      </ul>
+
+      <div class="warning">
+        <strong>Do not use temporary email</strong> for important accounts, banking, medical services, legal services, government accounts, shopping accounts you need later, or password recovery.
+      </div>
+
+      <h2>2. Keep one email for important accounts</h2>
+      <p>
+        Your important email should be protected and used carefully. This is the email you use for banking, work, government services, important shopping accounts, and account recovery.
+      </p>
+      <p>
+        Do not use your most important email address everywhere. The more places you use it, the more likely it is to receive spam or appear in a data breach.
+      </p>
+
+      <h2>3. Use separate emails for different purposes</h2>
+      <p>
+        A simple way to reduce spam is to separate your email use. You can have one email for important accounts, one for shopping, one for newsletters, and temporary email for low-risk sign-ups.
+      </p>
+      <p>
+        This makes it easier to see where spam is coming from. If your newsletter email gets flooded, your important email is still cleaner.
+      </p>
+
+      <div class="tips">
+        <div class="tip">
+          <h3>Important email</h3>
+          <p>Use for banking, work, government services, and account recovery.</p>
+        </div>
+
+        <div class="tip">
+          <h3>Shopping email</h3>
+          <p>Use for receipts, delivery updates, returns, and customer accounts.</p>
+        </div>
+
+        <div class="tip">
+          <h3>Newsletter email</h3>
+          <p>Use for promotions, free guides, discounts, and mailing lists.</p>
+        </div>
+
+        <div class="tip">
+          <h3>Temporary email</h3>
+          <p>Use for one-time, low-risk sign-ups where long-term access is not needed.</p>
+        </div>
+      </div>
+
+      <h2>4. Think before ticking marketing boxes</h2>
+      <p>
+        Many websites include checkboxes during sign-up. Some ask if you want offers, updates, partner messages, or newsletters. Do not rush past these boxes.
+      </p>
+      <p>
+        If you do not want marketing emails, leave those boxes unticked or choose the option that says no to promotional messages.
+      </p>
+
+      <h2>5. Do not publish your email address publicly</h2>
+      <p>
+        Public email addresses can be scraped by bots. If your email appears on public pages, forums, comments, social media profiles, or business directories, spam bots may collect it.
+      </p>
+      <p>
+        For business websites, use a contact form or a separate support email instead of exposing your personal inbox.
+      </p>
+
+      <h2>6. Unsubscribe carefully</h2>
+      <p>
+        For legitimate newsletters from companies you recognise, the unsubscribe link can help reduce unwanted email. But for suspicious spam, clicking links can confirm that your inbox is active.
+      </p>
+      <p>
+        If the email looks fake, dangerous, or completely unknown, it may be safer to mark it as spam instead of clicking anything inside it.
+      </p>
+
+      <h2>7. Use your email provider’s spam tools</h2>
+      <p>
+        Most email providers have spam filters, blocking tools, reporting tools, and rules. Use them. When you mark spam properly, your email provider can learn what to filter.
+      </p>
+      <p>
+        You can also create filters that automatically move newsletters, promotions, or suspicious messages into separate folders.
+      </p>
+
+      <h2>8. Do not reply to spam</h2>
+      <p>
+        Replying to spam is usually a mistake. It tells the sender that your email address is active. That can lead to even more spam.
+      </p>
+      <p>
+        If a message is clearly spam, do not reply. Do not argue. Do not ask them to stop. Mark it as spam and move on.
+      </p>
+
+      <h2>9. Watch out for phishing emails</h2>
+      <p>
+        Spam is annoying. Phishing is dangerous. Phishing emails try to trick you into giving away passwords, payment details, identity information, or access to your accounts.
+      </p>
+
+      <h3>Warning signs of phishing</h3>
+      <ul>
+        <li>The sender address looks strange or slightly misspelled.</li>
+        <li>The message creates panic or urgency.</li>
+        <li>It asks you to confirm passwords or payment details.</li>
+        <li>The link does not match the real company website.</li>
+        <li>The email has unexpected attachments.</li>
+        <li>The spelling, design, or tone feels wrong.</li>
+      </ul>
+
+      <div class="warning">
+        <strong>Never enter passwords from an email link</strong> unless you are completely sure the page is genuine. When in doubt, type the real website address manually into your browser.
+      </div>
+
+      <h2>10. Use strong passwords and two-factor authentication</h2>
+      <p>
+        Spam can become more dangerous if someone gains access to your email account. Use a strong, unique password for your main email account and turn on two-factor authentication where possible.
+      </p>
+      <p>
+        Your email account is often the key to resetting passwords for other accounts. Protect it properly.
+      </p>
+
+      <h2>11. Be careful with free downloads and giveaways</h2>
+      <p>
+        Free downloads, competitions, coupons, and giveaways often ask for an email address. Some are legitimate. Some mainly exist to collect email addresses.
+      </p>
+      <p>
+        If you only need a one-time confirmation email and do not trust the site enough to share your real inbox, a temporary email address may be the smarter choice.
+      </p>
+
+      <h2>12. Check whether a website looks trustworthy</h2>
+      <p>
+        Before entering your real email address, look at the website. Does it have clear contact information? Does it explain what it does with your data? Does it look professional? Does it have a privacy policy?
+      </p>
+      <p>
+        A website does not need to be perfect, but if it looks careless or suspicious, do not give it your main email address.
+      </p>
+
+      <h2>13. Do not use your main email for every trial</h2>
+      <p>
+        Free trials can create a lot of follow-up emails. Some companies send repeated reminders, offers, surveys, and sales messages after you sign up.
+      </p>
+      <p>
+        For trials you genuinely care about, use a real email. For low-risk testing, use a separate email or temporary inbox.
+      </p>
+
+      <h2>What to do if your inbox is already full of spam</h2>
+      <p>
+        If your inbox is already badly affected, start cleaning it in stages. Do not waste a whole day trying to fix everything at once.
+      </p>
+
+      <ol>
+        <li>Mark obvious junk as spam.</li>
+        <li>Unsubscribe from legitimate newsletters you no longer want.</li>
+        <li>Block repeat senders that keep sending unwanted messages.</li>
+        <li>Create filters for promotions and newsletters.</li>
+        <li>Stop using that email address for low-risk sign-ups.</li>
+        <li>Consider creating a cleaner email address for important accounts.</li>
+      </ol>
+
+      <h2>How temporary email fits into spam prevention</h2>
+      <p>
+        Temporary email is not the only solution, but it is a useful part of a smarter inbox strategy. It helps reduce exposure when you are dealing with low-trust websites.
+      </p>
+      <p>
+        The trick is knowing when to use it and when not to use it. Use temporary email for quick, low-risk tasks. Use real email for anything important.
+      </p>
+
+      <h2>Final advice</h2>
+      <p>
+        Avoiding spam is mostly about discipline. Do not hand out your real email address everywhere. Separate important accounts from low-risk sign-ups. Use temporary email carefully. Be suspicious of strange links and attachments.
+      </p>
+      <p>
+        The cleaner your email habits are, the cleaner your inbox will be.
+      </p>
+
+      <a class="cta" href="/">Create a temporary email</a>
+
+      <h2>Related guides</h2>
+      <div class="related">
+        <a href="/what-is-temporary-email.html">
+          What is a temporary email?
+          <span>Learn how disposable inboxes work.</span>
+        </a>
+
+        <a href="/is-temporary-email-safe.html">
+          Is temporary email safe?
+          <span>Understand the safety benefits and risks.</span>
+        </a>
+
+        <a href="/temporary-email-vs-real-email.html">
+          Temporary email vs real email
+          <span>Know which inbox to use for different situations.</span>
+        </a>
+
+        <a href="/why-some-sites-block-temporary-email.html">
+          Why some sites block temporary email
+          <span>Learn why websites reject disposable addresses.</span>
+        </a>
+      </div>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div>© 2026 ShortLifeMail. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/terms.html">Terms of Use</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </footer>
+</body>
+</html>
