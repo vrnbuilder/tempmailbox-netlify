@@ -1,8 +1,7 @@
 // netlify/functions/relay.js
-// MailSlurp-based backend for TempMailBox
+// mail.tm backend relay for TempMailBox
 
-const MAILSLURP_API_KEY = process.env.MAILSLURP_API_KEY;
-const MAILSLURP_BASE = "https://api.mailslurp.com";
+const MAILTM_BASE = "https://api.mail.tm";
 
 function json(statusCode, obj) {
   return {
@@ -16,172 +15,235 @@ function json(statusCode, obj) {
   };
 }
 
+async function readBody(res) {
+  const text = await res.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return { raw: text };
+  }
+}
+
+async function mtFetch(path, options = {}) {
+  return fetch(`${MAILTM_BASE}${path}`, {
+    ...options,
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+}
+
+function extractArray(data) {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data["hydra:member"])) return data["hydra:member"];
+  if (Array.isArray(data.member)) return data.member;
+  return [];
+}
+
+function randomLocalPart() {
+  const names = [
+    "alex","sam","max","leo","ryan","adam","ben","jack",
+    "noah","omar","zane","luca","milan","aria","maya",
+    "nina","sara","lena","ella","sofia"
+  ];
+
+  const prefixes = ["mail", "inbox", "user", "temp", "box"];
+  const separators = ["", ".", "_"];
+
+  const name = names[Math.floor(Math.random() * names.length)];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const sep = separators[Math.floor(Math.random() * separators.length)];
+  const num = Math.floor(10 + Math.random() * 990);
+
+  return `${prefix}${sep}${name}${num}`;
+}
+
+function randomPassword() {
+  return `Tmb-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+}
+
 exports.handler = async (event) => {
   try {
     const params = event.queryStringParameters || {};
     const action = params.action || "health";
 
-    if (!MAILSLURP_API_KEY && action !== "health") {
-      return json(500, { error: "missing_api_key" });
-    }
-
     if (action === "health") {
-      return json(200, { ok: true, ts: Date.now() });
+      return json(200, {
+        ok: true,
+        provider: "mail.tm",
+        ts: Date.now(),
+      });
     }
 
     if (action === "newInbox") {
-      // Create a new disposable inbox
-      const res = await fetch(`${MAILSLURP_BASE}/inboxes`, {
-        method: "POST",
-        headers: {
-          "x-api-key": MAILSLURP_API_KEY,
-          "content-type": "application/json",
-        },
-      });
+      const domainRes = await mtFetch("/domains");
 
-      if (!res.ok) {
-        const text = await res.text();
-        return json(res.status, {
-          error: "create_inbox_failed",
-          status: res.status,
-          bodySample: text.slice(0, 400),
+      if (!domainRes.ok) {
+        const body = await readBody(domainRes);
+        return json(domainRes.status, {
+          error: "domains_failed",
+          detail: body,
         });
       }
 
-      const data = await res.json();
-      const address = data.emailAddress;
-      const inboxId = data.id;
+      const domainData = await readBody(domainRes);
+      const allDomains = extractArray(domainData);
 
-      const [login, domain] = String(address).split("@");
-      const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+      const domains = allDomains.filter((d) => {
+        return d && d.domain && d.isActive !== false && d.isPrivate !== true;
+      });
 
-      return json(200, {
-        address,
-        login,
-        domain,
-        inboxId,
-        expiresAt,
+      if (!domains.length) {
+        return json(500, {
+          error: "no_domains_available",
+          detail: domainData,
+        });
+      }
+
+      let lastError = null;
+
+      for (const domainObj of domains) {
+        const domain = domainObj.domain;
+
+        for (let i = 0; i < 15; i++) {
+          const address = `${randomLocalPart()}@${domain}`;
+          const password = randomPassword();
+
+          const accountRes = await mtFetch("/accounts", {
+            method: "POST",
+            body: JSON.stringify({
+              address,
+              password,
+            }),
+          });
+
+          if (!accountRes.ok) {
+            lastError = await readBody(accountRes);
+            continue;
+          }
+
+          const account = await readBody(accountRes);
+
+          const tokenRes = await mtFetch("/token", {
+            method: "POST",
+            body: JSON.stringify({
+              address,
+              password,
+            }),
+          });
+
+          if (!tokenRes.ok) {
+            lastError = await readBody(tokenRes);
+            continue;
+          }
+
+          const tokenData = await readBody(tokenRes);
+
+          if (!tokenData.token) {
+            lastError = tokenData;
+            continue;
+          }
+
+          return json(200, {
+            address,
+            inboxId: account.id,
+            token: tokenData.token,
+            expiresAt: Date.now() + 10 * 60 * 1000,
+          });
+        }
+      }
+
+      return json(500, {
+        error: "could_not_create_account",
+        detail: lastError,
       });
     }
 
     if (action === "getMessages") {
-      const inboxId = params.inboxId;
-      if (!inboxId) {
-        return json(400, { error: "missing_inboxId" });
+      const token = params.token;
+
+      if (!token) {
+        return json(400, { error: "missing_token" });
       }
 
-      const url = new URL(`${MAILSLURP_BASE}/emails`);
-      url.searchParams.set("inboxId", inboxId);
-      url.searchParams.set("size", "50");
-      url.searchParams.set("sort", "DESC");
-
-      const res = await fetch(url.toString(), {
+      const res = await mtFetch("/messages", {
         headers: {
-          "x-api-key": MAILSLURP_API_KEY,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (!res.ok) {
-        const text = await res.text();
+        const body = await readBody(res);
         return json(res.status, {
-          error: "list_emails_failed",
-          status: res.status,
-          bodySample: text.slice(0, 400),
+          error: "messages_failed",
+          detail: body,
         });
       }
 
-      const emails = await res.json();
+      const data = await readBody(res);
+      const messages = extractArray(data);
 
-      const mapped = emails.map((e) => ({
-        id: e.id,
-        from: e.from,
-        subject: e.subject,
-        createdAt: e.createdAt,
-        read: e.read,
-        hasAttachments: Array.isArray(e.attachments) && e.attachments.length > 0,
-        attachmentIds: e.attachments || [],
+      const items = messages.map((m) => ({
+        id: m.id,
+        from: m.from && m.from.address ? m.from.address : "",
+        subject: m.subject || "(no subject)",
+        createdAt: m.createdAt || "",
       }));
 
-      return json(200, mapped);
+      return json(200, items);
     }
 
     if (action === "readMessage") {
+      const token = params.token;
       const id = params.id;
-      if (!id) {
-        return json(400, { error: "missing_id" });
+
+      if (!token || !id) {
+        return json(400, { error: "missing_token_or_id" });
       }
 
-      const res = await fetch(`${MAILSLURP_BASE}/emails/${id}`, {
-        headers: { "x-api-key": MAILSLURP_API_KEY },
+      const res = await mtFetch(`/messages/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (!res.ok) {
-        const text = await res.text();
+        const body = await readBody(res);
         return json(res.status, {
-          error: "get_email_failed",
-          status: res.status,
-          bodySample: text.slice(0, 400),
+          error: "message_failed",
+          detail: body,
         });
       }
 
-      const email = await res.json();
+      const msg = await readBody(res);
+
+      const htmlBody = Array.isArray(msg.html)
+        ? msg.html.join("")
+        : msg.html || null;
+
+      const textBody = Array.isArray(msg.text)
+        ? msg.text.join("\n")
+        : msg.text || msg.intro || "";
 
       return json(200, {
-        id: email.id,
-        subject: email.subject,
-        from: email.from,
-        to: email.to,
-        createdAt: email.createdAt,
-        body: email.body,
-        htmlBody: email.htmlBody || null,
-        attachmentIds: email.attachments || [],
+        id: msg.id,
+        subject: msg.subject || "(no subject)",
+        from: msg.from && msg.from.address ? msg.from.address : "",
+        to: Array.isArray(msg.to)
+          ? msg.to.map((x) => x.address).join(", ")
+          : "",
+        createdAt: msg.createdAt || "",
+        body: textBody,
+        htmlBody,
       });
     }
 
-    if (action === "download") {
-      const id = params.id;
-      const attachmentId = params.attachmentId;
-      const fileName = params.file || "attachment.bin";
-
-      if (!id || !attachmentId) {
-        return json(400, { error: "missing_id_or_attachmentId" });
-      }
-
-      const res = await fetch(
-        `${MAILSLURP_BASE}/emails/${id}/attachments/${attachmentId}`,
-        {
-          headers: { "x-api-key": MAILSLURP_API_KEY },
-        }
-      );
-
-      if (!res.ok) {
-        const text = await res.text();
-        return json(res.status, {
-          error: "download_failed",
-          status: res.status,
-          bodySample: text.slice(0, 400),
-        });
-      }
-
-      const arrayBuf = await res.arrayBuffer();
-      const buf = Buffer.from(arrayBuf);
-
-      return {
-        statusCode: 200,
-        headers: {
-          "content-type":
-            res.headers.get("content-type") || "application/octet-stream",
-          "content-disposition": `attachment; filename="${fileName}"`,
-          "access-control-allow-origin": "*",
-          "cache-control": "no-store",
-        },
-        body: buf.toString("base64"),
-        isBase64Encoded: true,
-      };
-    }
-
-    // Unknown action
-    return json(400, { error: "unknown_action", action });
+    return json(400, {
+      error: "unknown_action",
+      action,
+    });
   } catch (err) {
     return json(500, {
       error: "server_error",

@@ -1,529 +1,560 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>TempMailBox — Disposable email with a 10-minute timer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Tailwind via CDN -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              bg: "#0b0f14",
-              card: "#0f131a",
-              accent: "#22c55e",
-              purplebtn: "#7c3aed",
-            },
-          },
-        },
-      };
-    </script>
-  </head>
-  <body class="min-h-screen bg-bg text-gray-100 flex flex-col">
-    <!-- Top bar -->
-    <header
-      class="w-full border-b border-white/5 bg-bg/80 backdrop-blur flex items-center justify-between px-6 py-3"
-    >
-      <div class="flex items-center gap-3">
-        <span
-          class="inline-flex items-center rounded-full bg-card px-4 py-1 text-sm font-semibold"
-          >TempMailBox</span
-        >
-        <span class="text-sm text-gray-400"
-          >Disposable email with a 10-minute timer</span
-        >
-      </div>
-      <button
-        id="btnNew"
-        class="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black shadow-lg shadow-emerald-500/40 hover:bg-emerald-400 transition"
-      >
-        New address
+<head>
+<meta charset="UTF-8">
+<title>ShortLifeMail — Free Temporary Email Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Create a free temporary email address in one click. Use ShortLifeMail to avoid spam, protect your real inbox, and receive temporary emails without signup.">
+
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2501807800717598"
+     crossorigin="anonymous"></script>
+
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-black text-white min-h-screen flex flex-col">
+
+<header class="border-b border-gray-800 bg-black/95 sticky top-0 z-40">
+  <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+    <a href="/" class="block">
+      <h1 class="font-bold text-xl">ShortLifeMail</h1>
+      <p class="text-xs text-gray-400">Create a temporary email in 1 click — avoid spam instantly</p>
+    </a>
+
+    <div class="flex flex-wrap items-center gap-4">
+      <nav class="flex gap-4 text-sm text-gray-300">
+        <a href="/" class="hover:text-white">Home</a>
+        <a href="/privacy.html" class="hover:text-white">Privacy</a>
+        <a href="/terms.html" class="hover:text-white">Terms</a>
+        <a href="/contact.html" class="hover:text-white">Contact</a>
+      </nav>
+
+      <button id="btnNew" class="bg-green-500 hover:bg-green-400 text-black px-5 py-2 rounded font-medium">
+        New Address
       </button>
-    </header>
+    </div>
+  </div>
+</header>
 
-    <main class="flex-1 px-4 md:px-10 py-8 max-w-6xl w-full mx-auto space-y-6">
-      <!-- Alerts -->
-      <div id="alert" class="hidden text-sm rounded-md px-3 py-2"></div>
+<main class="flex-1 p-4 max-w-5xl mx-auto w-full space-y-4">
 
-      <!-- Address + controls -->
-      <section
-        class="rounded-2xl bg-card/90 shadow-xl shadow-black/40 border border-white/5 p-4 md:p-6 space-y-3"
-      >
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <p class="text-xs uppercase tracking-wide text-gray-400">
-              Your temporary email
-            </p>
-            <p class="text-xs text-gray-500">
-              Expires in <span id="countdown">--:--</span>
-            </p>
-          </div>
+<div id="alert" class="hidden"></div>
 
-          <div class="flex items-center gap-2">
-            <button
-              id="btnExtend"
-              class="rounded-full bg-purplebtn px-4 py-1.5 text-xs font-medium hover:bg-purple-500 transition"
-            >
-              Extend +10m
-            </button>
-            <button
-              id="btnRefresh"
-              class="rounded-full bg-card px-4 py-1.5 text-xs font-medium border border-white/10 hover:border-white/40 transition"
-            >
-              Refresh inbox
-            </button>
-          </div>
-        </div>
+<section class="bg-gray-900 p-4 rounded">
+  <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
 
-        <div
-          class="mt-2 flex items-center gap-3 rounded-xl bg-black/40 px-3 py-2 border border-white/10"
-        >
-          <code
-            id="emailText"
-            class="flex-1 font-mono text-sm text-gray-100 truncate"
-            >-</code
-          >
-          <button
-            id="btnCopy"
-            class="rounded-lg bg-card px-4 py-1.5 text-xs border border-white/15 hover:border-white/40 transition"
-          >
-            Copy
-          </button>
-        </div>
+    <div class="flex-1 min-w-0">
+      <p class="text-xs text-gray-400">Your temporary email</p>
 
-        <p class="mt-2 text-xs text-gray-500">
-          Tip: Gmail and other providers may need 10–60 seconds to deliver to
-          disposable inboxes. We auto-refresh; you can also click “Refresh
-          inbox”.
-        </p>
-      </section>
-
-      <!-- Inbox + message -->
-      <section class="grid md:grid-cols-2 gap-4">
-        <div
-          class="rounded-2xl bg-card/90 shadow-lg shadow-black/30 border border-white/5 p-4"
-        >
-          <h2 class="text-sm font-semibold mb-2">Inbox</h2>
-          <div
-            id="inboxEmpty"
-            class="text-xs text-gray-500 border border-dashed border-white/10 rounded-xl px-4 py-6 text-center"
-          >
-            No emails yet. Send a test email to your address to see it here.
-          </div>
-          <ul
-            id="inboxList"
-            class="hidden divide-y divide-white/5 max-h-80 overflow-y-auto text-sm"
-          ></ul>
-        </div>
-
-        <div
-          class="rounded-2xl bg-card/90 shadow-lg shadow-black/30 border border-white/5 p-4"
-        >
-          <h2 class="text-sm font-semibold mb-2">Message</h2>
-          <div
-            id="msgEmpty"
-            class="text-xs text-gray-500 border border-dashed border-white/10 rounded-xl px-4 py-6 text-center"
-          >
-            Select a message to read its contents.
-          </div>
-          <div id="msgView" class="hidden space-y-3 text-sm">
-            <div>
-              <div
-                class="text-xs font-semibold text-gray-400 uppercase tracking-wide"
-              >
-                Subject
-              </div>
-              <div id="msgSubject" class="font-medium"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2 text-xs text-gray-400">
-              <div>
-                <span class="font-semibold text-gray-300">From:</span>
-                <span id="msgFrom"></span>
-              </div>
-              <div>
-                <span class="font-semibold text-gray-300">To:</span>
-                <span id="msgTo"></span>
-              </div>
-              <div class="col-span-2">
-                <span class="font-semibold text-gray-300">Date:</span>
-                <span id="msgDate"></span>
-              </div>
-            </div>
-            <div
-              id="msgBody"
-              class="mt-2 rounded-lg bg-black/40 border border-white/10 p-3 text-sm whitespace-pre-wrap"
-            ></div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer
-      class="w-full border-t border-white/5 text-xs text-gray-500 px-6 py-3 flex flex-col md:flex-row items-center justify-between gap-2"
-    >
-      <div>
-        © <span id="year"></span> TempMailBox — Part of the Instant Tools
-        Network
+      <div class="bg-black/40 border border-gray-700 rounded px-3 py-2 mt-1">
+        <p id="emailText" class="font-mono text-sm truncate">Creating...</p>
       </div>
-      <div class="space-x-4">
-        <a href="#" class="hover:text-gray-300">Privacy</a>
-        <a href="#" class="hover:text-gray-300">Terms</a>
+
+      <p class="text-xs text-gray-500 mt-2">
+        Expires in <span id="countdown">--:--</span>
+      </p>
+
+      <p class="text-xs text-yellow-400 mt-1">
+        ⚠️ Deletes in 10 minutes — extend before it expires
+      </p>
+
+      <p id="autoStatus" class="text-xs text-gray-500 mt-1">
+        Manual refresh only — click Refresh every 20–30 seconds to check for new emails.
+      </p>
+
+      <p class="text-xs text-gray-400 mt-2">
+        ✅ No signup • ✅ Extend anytime • ✅ Auto deletes • ✅ No tracking
+      </p>
+    </div>
+
+    <div class="flex flex-wrap gap-2">
+      <button id="btnExtend" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs rounded font-semibold">
+        Extend +10 min
+      </button>
+      <button id="btnCopy" class="border border-gray-400 hover:bg-gray-800 px-4 py-2 text-xs rounded">
+        Copy
+      </button>
+      <button id="btnRefresh" class="border border-gray-400 hover:bg-gray-800 px-4 py-2 text-xs rounded font-semibold">
+        Refresh
+      </button>
+    </div>
+
+  </div>
+</section>
+
+<section class="bg-gray-950 border border-gray-800 rounded p-4 text-sm text-gray-300 leading-6">
+  <h2 class="text-white text-lg font-bold mb-2">Free temporary email address</h2>
+  <p>
+    ShortLifeMail gives you a temporary email address that you can use when signing up online.
+    It helps protect your real inbox from spam, newsletters, unwanted messages, and websites you do not fully trust yet.
+  </p>
+</section>
+
+<div class="grid md:grid-cols-2 gap-4">
+
+<section class="bg-gray-900 p-4 rounded">
+  <h2 class="mb-2 font-semibold text-lg">Inbox</h2>
+  <ul id="inboxList" class="space-y-2"></ul>
+
+  <p class="text-xs text-gray-500 mt-3">
+    Click Refresh to check for new emails. Refresh is limited to once every 10 seconds.
+  </p>
+
+  <div class="mt-5 text-xs text-gray-400 border border-gray-800 rounded p-4 leading-5">
+    <strong class="text-white">Privacy note:</strong>
+    Temporary inboxes are useful for quick sign-ups, but they should not be used for banking,
+    medical, government, password recovery, or important personal accounts.
+  </div>
+</section>
+
+<section class="bg-gray-900 p-4 rounded">
+  <h2 class="mb-2 font-semibold text-lg">Message</h2>
+  <div id="msgBody" class="text-sm text-gray-300">
+    Select a message to read it.
+  </div>
+</section>
+
+</div>
+
+<section class="bg-gray-950 border border-gray-800 rounded p-5 mt-6 text-gray-300 text-sm leading-6">
+  <h2 class="text-white text-lg font-bold mb-2">What is ShortLifeMail?</h2>
+  <p>
+    ShortLifeMail is a simple temporary email generator. It creates a short-life inbox that can receive emails without requiring you to sign up, log in, or share your personal email address.
+  </p>
+  <p class="mt-3">
+    Temporary email is useful when you need to receive a confirmation message, test a website, download a file, or sign up to a service without exposing your main inbox.
+  </p>
+</section>
+
+<section class="grid md:grid-cols-3 gap-4 mt-6">
+  <div class="bg-gray-900 border border-gray-800 rounded p-5">
+    <h2 class="text-white font-bold mb-2">Avoid spam</h2>
+    <p class="text-sm text-gray-400 leading-6">
+      Use a temporary address when you do not want newsletters, promotions, or random websites filling your real inbox.
+    </p>
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 rounded p-5">
+    <h2 class="text-white font-bold mb-2">No account needed</h2>
+    <p class="text-sm text-gray-400 leading-6">
+      Generate an email address instantly without creating a profile, setting a password, or entering personal details.
+    </p>
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 rounded p-5">
+    <h2 class="text-white font-bold mb-2">Short-life inbox</h2>
+    <p class="text-sm text-gray-400 leading-6">
+      Inboxes are designed for quick use. You can extend the timer if you need more time before the address expires.
+    </p>
+  </div>
+</section>
+
+<section class="bg-gray-950 border border-gray-800 rounded p-5 mt-6 text-gray-300 text-sm leading-6">
+  <h2 class="text-white text-lg font-bold mb-3">How to use ShortLifeMail</h2>
+
+  <ol class="list-decimal list-inside space-y-2">
+    <li>Copy the temporary email address shown above.</li>
+    <li>Use it on the website where you need to receive an email.</li>
+    <li>Wait 20–30 seconds after the other website sends the email.</li>
+    <li>Click the Refresh button to check your inbox.</li>
+    <li>Open the message when it appears.</li>
+  </ol>
+</section>
+
+<section class="bg-gray-950 border border-gray-800 rounded p-5 mt-6 text-gray-300 text-sm leading-6">
+  <h2 class="text-white text-lg font-bold mb-3">When should you use a temporary email?</h2>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div>
+      <h3 class="text-green-400 font-semibold mb-2">Good uses</h3>
+      <ul class="list-disc list-inside space-y-2">
+        <li>Testing websites or apps</li>
+        <li>Signing up for free downloads</li>
+        <li>Avoiding marketing emails</li>
+        <li>Checking confirmation emails</li>
+        <li>Protecting your main inbox from spam</li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="text-red-400 font-semibold mb-2">Do not use it for</h3>
+      <ul class="list-disc list-inside space-y-2">
+        <li>Banking or payment accounts</li>
+        <li>Medical, legal, or government services</li>
+        <li>Password recovery</li>
+        <li>Important personal accounts</li>
+        <li>Anything you need long-term access to</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="bg-gray-950 border border-gray-800 rounded p-5 mt-6 text-gray-300 text-sm leading-6">
+  <h2 class="text-white text-lg font-bold mb-3">Helpful temporary email guides</h2>
+  <p class="mb-4">
+    Learn when temporary email is useful, when it is risky, and how to protect your real inbox from spam.
+  </p>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <a href="/what-is-temporary-email.html" class="block bg-gray-900 border border-gray-800 rounded p-4 hover:border-purple-500">
+      <h3 class="text-white font-bold mb-1">What is a temporary email address?</h3>
+      <p class="text-gray-400 text-sm">
+        Learn how disposable inboxes work and when they are useful.
+      </p>
+    </a>
+
+    <a href="/temporary-email-vs-real-email.html" class="block bg-gray-900 border border-gray-800 rounded p-4 hover:border-purple-500">
+      <h3 class="text-white font-bold mb-1">Temporary email vs real email</h3>
+      <p class="text-gray-400 text-sm">
+        Understand when to use a temporary inbox and when to use a normal email account.
+      </p>
+    </a>
+
+    <a href="/is-temporary-email-safe.html" class="block bg-gray-900 border border-gray-800 rounded p-4 hover:border-purple-500">
+      <h3 class="text-white font-bold mb-1">Is temporary email safe?</h3>
+      <p class="text-gray-400 text-sm">
+        See what temporary email protects and what it does not protect.
+      </p>
+    </a>
+
+    <a href="/how-to-avoid-spam-email.html" class="block bg-gray-900 border border-gray-800 rounded p-4 hover:border-purple-500">
+      <h3 class="text-white font-bold mb-1">How to avoid spam email</h3>
+      <p class="text-gray-400 text-sm">
+        Practical habits to keep your inbox cleaner and reduce unwanted emails.
+      </p>
+    </a>
+
+    <a href="/when-not-to-use-temporary-email.html" class="block bg-gray-900 border border-gray-800 rounded p-4 hover:border-purple-500">
+      <h3 class="text-white font-bold mb-1">When not to use temporary email</h3>
+      <p class="text-gray-400 text-sm">
+        Avoid using disposable email for banking, recovery, medical, legal, or important accounts.
+      </p>
+    </a>
+
+    <a href="/why-some-sites-block-temporary-email.html" class="block bg-gray-900 border border-gray-800 rounded p-4 hover:border-purple-500">
+      <h3 class="text-white font-bold mb-1">Why some websites block temporary email</h3>
+      <p class="text-gray-400 text-sm">
+        Learn why some websites reject disposable inboxes and what to do instead.
+      </p>
+    </a>
+  </div>
+</section>
+
+<section class="bg-gray-950 border border-gray-800 rounded p-5 mt-6 text-gray-300 text-sm leading-6">
+  <h2 class="text-white text-lg font-bold mb-3">Frequently asked questions</h2>
+
+  <div class="space-y-5">
+    <div>
+      <h3 class="text-white font-semibold">Is ShortLifeMail free?</h3>
+      <p class="mt-1">
+        Yes. You can create a temporary email address without signing up or paying.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="text-white font-semibold">Why do I need to click Refresh?</h3>
+      <p class="mt-1">
+        ShortLifeMail uses manual refresh to reduce unnecessary server requests and keep the tool lightweight.
+        Wait around 20–30 seconds after an email is sent, then click Refresh.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="text-white font-semibold">Can I use this email forever?</h3>
+      <p class="mt-1">
+        No. Temporary emails are short-life inboxes. If you need a permanent inbox, use a normal email provider.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="text-white font-semibold">Why did an email not arrive?</h3>
+      <p class="mt-1">
+        Some websites block temporary email addresses. Delivery can also take time or fail depending on the sender.
+        Try waiting a little longer and clicking Refresh again.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="text-white font-semibold">Is temporary email safe?</h3>
+      <p class="mt-1">
+        It is useful for low-risk sign-ups and spam protection, but it is not suitable for sensitive or important messages.
+        Never use temporary email for banking, medical, legal, government, or password recovery emails.
+      </p>
+    </div>
+  </div>
+</section>
+
+<p class="text-[11px] text-gray-600 text-center">
+  Email inbox powered by mail.tm
+</p>
+
+<footer class="border-t border-gray-800 mt-8 pt-6 pb-4 text-center text-xs text-gray-500">
+  <div class="mb-3">
+    © 2026 ShortLifeMail. All rights reserved.
+  </div>
+
+  <div class="flex justify-center gap-4 flex-wrap">
+    <a href="/" class="hover:text-white">Home</a>
+    <a href="/what-is-temporary-email.html" class="hover:text-white">Temporary Email Guide</a>
+    <a href="/privacy.html" class="hover:text-white">Privacy Policy</a>
+    <a href="/terms.html" class="hover:text-white">Terms of Use</a>
+    <a href="/contact.html" class="hover:text-white">Contact</a>
+  </div>
+</footer>
+
+</main>
+
+<script>
+const API = "/.netlify/functions/relay";
+
+let state = null;
+let timer = null;
+let refreshing = false;
+let lastRefresh = 0;
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function showPopup(message, type = "success") {
+  const alertBox = $("alert");
+
+  alertBox.textContent = message;
+  alertBox.className =
+    "fixed top-5 left-1/2 -translate-x-1/2 z-50 font-semibold px-5 py-3 rounded-xl shadow-lg " +
+    (type === "success"
+      ? "bg-green-500 text-black"
+      : "bg-red-600 text-white");
+
+  setTimeout(() => {
+    alertBox.className = "hidden";
+    alertBox.textContent = "";
+  }, 2000);
+}
+
+async function api(action, params = {}) {
+  const url = new URL(API, location.origin);
+  url.searchParams.set("action", action);
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, value);
+    }
+  });
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: { "cache-control": "no-store" },
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || data.error) {
+    throw new Error(data.error || "Request failed");
+  }
+
+  return data;
+}
+
+function updateTimer() {
+  if (!state || !state.expiresAt) return;
+
+  const diff = state.expiresAt - Date.now();
+
+  if (diff <= 0) {
+    $("countdown").textContent = "Expired";
+    $("autoStatus").textContent = "Inbox expired — create a new address";
+    return;
+  }
+
+  const minutes = Math.floor(diff / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+
+  $("countdown").textContent =
+    `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function renderInbox(items) {
+  const list = $("inboxList");
+  list.innerHTML = "";
+
+  if (!items || items.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "text-sm text-red-400 font-semibold p-3 border border-gray-700 rounded";
+    empty.textContent = "No emails yet. Wait 20–30 seconds, then click Refresh.";
+    list.appendChild(empty);
+    return;
+  }
+
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.className =
+      "p-3 border border-gray-700 rounded cursor-pointer hover:bg-gray-800 transition";
+
+    li.innerHTML = `
+      <div class="text-xs text-gray-400 truncate">${item.from || "Unknown sender"}</div>
+      <div class="font-semibold">${item.subject || "(no subject)"}</div>
+      <div class="text-xs text-gray-500">${item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</div>
+    `;
+
+    li.onclick = () => loadMessage(item.id);
+    list.appendChild(li);
+  });
+}
+
+async function newInbox() {
+  try {
+    showPopup("Creating new inbox...", "success");
+
+    const data = await api("newInbox");
+    state = data;
+    lastRefresh = 0;
+
+    $("emailText").textContent = data.address;
+
+    clearInterval(timer);
+    timer = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    renderInbox([]);
+    $("msgBody").innerHTML = "Select a message to read it.";
+    $("autoStatus").textContent = "Manual refresh only — click Refresh every 20–30 seconds to check for new emails.";
+
+  } catch (err) {
+    $("emailText").textContent = "Could not create inbox";
+    $("autoStatus").textContent = "Inbox creation failed";
+    showPopup("Failed to create inbox", "error");
+  }
+}
+
+async function refreshInbox(showMessage = true) {
+  if (!state || !state.token || refreshing) return;
+
+  const btn = $("btnRefresh");
+  const oldText = btn.textContent;
+
+  try {
+    refreshing = true;
+    btn.disabled = true;
+    btn.textContent = "Checking...";
+    btn.classList.add("opacity-70");
+
+    const items = await api("getMessages", {
+      token: state.token,
+    });
+
+    renderInbox(items);
+    $("autoStatus").textContent = "Inbox checked manually";
+
+    if (showMessage) {
+      if (items.length > 0) {
+        showPopup(`Inbox updated — ${items.length} email(s) found`, "success");
+      } else {
+        showPopup("Inbox checked — no emails yet", "success");
+      }
+    }
+
+  } catch (err) {
+    if (showMessage) {
+      showPopup("Refresh failed — try again later", "error");
+    }
+    $("autoStatus").textContent = "Refresh failed — wait and try again";
+  } finally {
+    refreshing = false;
+    btn.disabled = false;
+    btn.textContent = oldText || "Refresh";
+    btn.classList.remove("opacity-70");
+  }
+}
+
+function safeRefresh() {
+  if (!state || !state.token) {
+    showPopup("Create an inbox first", "error");
+    return;
+  }
+
+  if (state.expiresAt <= Date.now()) {
+    showPopup("Inbox expired — create a new address", "error");
+    return;
+  }
+
+  const now = Date.now();
+
+  if (now - lastRefresh < 10000) {
+    showPopup("Wait 10 seconds before refreshing again", "error");
+    return;
+  }
+
+  lastRefresh = now;
+  refreshInbox(true);
+}
+
+async function loadMessage(id) {
+  if (!state || !state.token) {
+    showPopup("Create an inbox first", "error");
+    return;
+  }
+
+  try {
+    showPopup("Opening message...", "success");
+
+    const msg = await api("readMessage", {
+      id,
+      token: state.token,
+    });
+
+    $("msgBody").innerHTML = `
+      <div class="space-y-3">
+        <div>
+          <div class="text-xs text-gray-400">Subject</div>
+          <div class="font-semibold">${msg.subject || "(no subject)"}</div>
+        </div>
+        <div class="text-xs text-gray-400">
+          <div><strong>From:</strong> ${msg.from || ""}</div>
+          <div><strong>To:</strong> ${msg.to || ""}</div>
+          <div><strong>Date:</strong> ${msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</div>
+        </div>
+        <div class="bg-black border border-gray-700 rounded p-3 text-sm overflow-auto">
+          ${msg.htmlBody || msg.body || "No message body."}
+        </div>
       </div>
-    </footer>
+    `;
+  } catch (err) {
+    showPopup("Could not open message", "error");
+  }
+}
 
-    <script>
-      // ------------ tiny helpers ------------
-      const API_BASE = "/.netlify/functions/relay";
-      const STORAGE_KEY = "tmMailSlurpState";
+$("btnNew").onclick = newInbox;
 
-      function showAlert(message, type = "error") {
-        const el = document.getElementById("alert");
-        if (!message) {
-          el.classList.add("hidden");
-          el.textContent = "";
-          return;
-        }
-        el.textContent = message;
-        el.classList.remove("hidden");
-        el.classList.remove(
-          "bg-red-900/60",
-          "border-red-500/60",
-          "bg-emerald-900/60",
-          "border-emerald-500/60"
-        );
-        if (type === "success") {
-          el.classList.add(
-            "bg-emerald-900/60",
-            "border-emerald-500/60",
-            "border"
-          );
-        } else {
-          el.classList.add("bg-red-900/60", "border-red-500/60", "border");
-        }
-      }
+$("btnCopy").onclick = async () => {
+  if (!state || !state.address) {
+    showPopup("No email to copy", "error");
+    return;
+  }
 
-      async function api(action, params = {}) {
-        const url = new URL(API_BASE, window.location.origin);
-        url.searchParams.set("action", action);
-        for (const [k, v] of Object.entries(params)) {
-          if (v !== undefined && v !== null) {
-            url.searchParams.set(k, v);
-          }
-        }
+  try {
+    await navigator.clipboard.writeText(state.address);
+    showPopup("✅ Email copied to clipboard", "success");
+  } catch (err) {
+    showPopup("Copy failed — copy manually", "error");
+  }
+};
 
-        const res = await fetch(url.toString(), {
-          method: "GET",
-          headers: { "cache-control": "no-store" },
-        });
+$("btnRefresh").onclick = safeRefresh;
 
-        const text = await res.text();
-        let data;
-        try {
-          data = text ? JSON.parse(text) : {};
-        } catch {
-          throw new Error("Bad JSON from backend: " + text.slice(0, 120));
-        }
+$("btnExtend").onclick = () => {
+  if (!state || !state.expiresAt) {
+    showPopup("No inbox to extend", "error");
+    return;
+  }
 
-        if (!res.ok || data.error) {
-          const msg =
-            data && data.error
-              ? data.error
-              : `HTTP ${res.status} calling ${action}`;
-          throw new Error(msg);
-        }
-        return data;
-      }
+  state.expiresAt += 10 * 60 * 1000;
+  updateTimer();
+  showPopup("✅ Extended by 10 minutes", "success");
+};
 
-      function loadState() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          return raw ? JSON.parse(raw) : null;
-        } catch {
-          return null;
-        }
-      }
+newInbox();
+</script>
 
-      function saveState(state) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      }
-
-      function clearState() {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-
-      function formatCountdown(msLeft) {
-        if (msLeft <= 0) return "00:00";
-        const s = Math.floor(msLeft / 1000);
-        const m = Math.floor(s / 60);
-        const sec = s % 60;
-        return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-      }
-
-      function formatDate(iso) {
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())) return iso || "";
-        return d.toLocaleString();
-      }
-
-      // ------------ UI state ------------
-      let appState = null;
-      let countdownTimer = null;
-      let pollTimer = null;
-
-      function setEmailUI(address) {
-        document.getElementById("emailText").textContent =
-          address || "-";
-      }
-
-      function updateCountdown() {
-        const el = document.getElementById("countdown");
-        if (!appState || !appState.expiresAt) {
-          el.textContent = "--:--";
-          return;
-        }
-        const msLeft = appState.expiresAt - Date.now();
-        el.textContent = formatCountdown(msLeft);
-        const expired = msLeft <= 0;
-
-        document
-          .getElementById("btnExtend")
-          .classList.toggle("opacity-50", expired);
-        document
-          .getElementById("btnRefresh")
-          .classList.toggle("opacity-50", expired);
-        document
-          .getElementById("btnExtend")
-          .toggleAttribute("disabled", expired);
-        document
-          .getElementById("btnRefresh")
-          .toggleAttribute("disabled", expired);
-
-        if (expired && pollTimer) {
-          clearInterval(pollTimer);
-          pollTimer = null;
-        }
-      }
-
-      function startCountdown() {
-        if (countdownTimer) clearInterval(countdownTimer);
-        updateCountdown();
-        countdownTimer = setInterval(updateCountdown, 1000);
-      }
-
-      function startPolling() {
-        if (pollTimer) clearInterval(pollTimer);
-        if (!appState || !appState.inboxId) return;
-        const tick = () => {
-          const msLeft = appState.expiresAt - Date.now();
-          if (msLeft <= 0) return;
-          loadInbox();
-        };
-        tick();
-        pollTimer = setInterval(tick, 15000);
-      }
-
-      // ------------ inbox rendering ------------
-      function renderInbox(items) {
-        const list = document.getElementById("inboxList");
-        const empty = document.getElementById("inboxEmpty");
-
-        if (!items || !items.length) {
-          empty.classList.remove("hidden");
-          list.classList.add("hidden");
-          list.innerHTML = "";
-          return;
-        }
-
-        empty.classList.add("hidden");
-        list.classList.remove("hidden");
-        list.innerHTML = "";
-
-        for (const item of items) {
-          const li = document.createElement("li");
-          li.className =
-            "px-3 py-2 hover:bg-white/5 cursor-pointer flex flex-col gap-0.5";
-          li.dataset.id = item.id;
-
-          const top = document.createElement("div");
-          top.className = "flex items-center justify-between gap-2";
-
-          const from = document.createElement("div");
-          from.className = "text-xs text-gray-400 truncate";
-          from.textContent = item.from || "(unknown sender)";
-
-          const date = document.createElement("div");
-          date.className = "text-[11px] text-gray-500";
-          date.textContent = formatDate(item.createdAt);
-
-          top.appendChild(from);
-          top.appendChild(date);
-
-          const subject = document.createElement("div");
-          subject.className = "text-sm text-gray-100 truncate";
-          subject.textContent = item.subject || "(no subject)";
-
-          li.appendChild(top);
-          li.appendChild(subject);
-
-          li.addEventListener("click", () => {
-            loadMessage(item.id);
-          });
-
-          list.appendChild(li);
-        }
-      }
-
-      function renderMessage(msg) {
-        const empty = document.getElementById("msgEmpty");
-        const view = document.getElementById("msgView");
-
-        if (!msg) {
-          empty.classList.remove("hidden");
-          view.classList.add("hidden");
-          return;
-        }
-
-        empty.classList.add("hidden");
-        view.classList.remove("hidden");
-
-        document.getElementById("msgSubject").textContent =
-          msg.subject || "(no subject)";
-        document.getElementById("msgFrom").textContent = " " + (msg.from || "");
-        document.getElementById("msgTo").textContent = " " + (msg.to || "");
-        document.getElementById("msgDate").textContent =
-          " " + formatDate(msg.createdAt);
-
-        const bodyEl = document.getElementById("msgBody");
-        bodyEl.innerHTML = "";
-        if (msg.htmlBody) {
-          // very simple sanitisation: just drop script tags
-          const safe = msg.htmlBody.replace(/<script[\s\S]*?<\/script>/gi, "");
-          const div = document.createElement("div");
-          div.innerHTML = safe;
-          bodyEl.appendChild(div);
-        } else {
-          bodyEl.textContent = msg.body || "";
-        }
-      }
-
-      // ------------ data loaders ------------
-      async function ensureInbox(forceNew = false) {
-        showAlert("");
-
-        if (!forceNew) {
-          const existing = loadState();
-          if (
-            existing &&
-            existing.address &&
-            existing.inboxId &&
-            existing.expiresAt > Date.now()
-          ) {
-            appState = existing;
-            setEmailUI(existing.address);
-            startCountdown();
-            startPolling();
-            return;
-          }
-        }
-
-        try {
-          showAlert("Creating temporary inbox…", "success");
-          const data = await api("newInbox");
-          appState = {
-            address: data.address,
-            inboxId: data.inboxId,
-            expiresAt: data.expiresAt,
-          };
-          saveState(appState);
-          setEmailUI(appState.address);
-          startCountdown();
-          startPolling();
-          showAlert("");
-        } catch (err) {
-          console.error(err);
-          showAlert("Failed to generate address: " + err.message);
-          setEmailUI("-");
-        }
-      }
-
-      async function loadInbox() {
-        if (!appState || !appState.inboxId) return;
-        try {
-          const items = await api("getMessages", {
-            inboxId: appState.inboxId,
-          });
-          renderInbox(items);
-        } catch (err) {
-          console.error(err);
-          showAlert("Failed to load inbox: " + err.message);
-        }
-      }
-
-      async function loadMessage(id) {
-        try {
-          const msg = await api("readMessage", { id });
-          renderMessage(msg);
-        } catch (err) {
-          console.error(err);
-          showAlert("Failed to load message: " + err.message);
-        }
-      }
-
-      // ------------ event wiring ------------
-      function init() {
-        document.getElementById("year").textContent =
-          new Date().getFullYear();
-
-        document
-          .getElementById("btnNew")
-          .addEventListener("click", () => {
-            clearState();
-            appState = null;
-            setEmailUI("-");
-            renderInbox([]);
-            renderMessage(null);
-            ensureInbox(true);
-          });
-
-        document
-          .getElementById("btnCopy")
-          .addEventListener("click", async () => {
-            if (!appState || !appState.address) return;
-            try {
-              await navigator.clipboard.writeText(appState.address);
-              showAlert("Copied address to clipboard", "success");
-              setTimeout(() => showAlert(""), 1500);
-            } catch {
-              showAlert("Could not copy to clipboard");
-            }
-          });
-
-        document
-          .getElementById("btnExtend")
-          .addEventListener("click", () => {
-            if (!appState) return;
-            appState.expiresAt =
-              appState.expiresAt + 10 * 60 * 1000;
-            saveState(appState);
-            startCountdown();
-            showAlert("Extended inbox by 10 minutes", "success");
-            setTimeout(() => showAlert(""), 1500);
-          });
-
-        document
-          .getElementById("btnRefresh")
-          .addEventListener("click", () => {
-            loadInbox();
-          });
-
-        ensureInbox(false);
-      }
-
-      document.addEventListener("DOMContentLoaded", init);
-    </script>
-  </body>
+</body>
 </html>
-
-
