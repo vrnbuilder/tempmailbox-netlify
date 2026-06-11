@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>About ShortLifeMail | Free Temporary Email Service</title>
+  <meta name="description" content="ShortLifeMail is a free temporary email service built to help people protect their real inbox from spam, marketing emails, and unwanted sign-up lists." />
+  <meta name="robots" content="index, follow" />
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2501807800717598"
+     crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --bg: #08080c;
+      --card: #12121a;
+      --text: #f5f5f7;
+      --muted: #b7b7c8;
+      --soft: #8f8fa3;
+      --purple: #8b5cf6;
+      --purple-2: #a78bfa;
+      --green: #22c55e;
+      --border: rgba(255, 255, 255, 0.1);
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(139, 92, 246, 0.22), transparent 35%),
+        radial-gradient(circle at top right, rgba(34, 197, 94, 0.12), transparent 30%),
+        var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    a { color: var(--purple-2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .site-header {
+      width: 100%;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 8, 12, 0.84);
+      backdrop-filter: blur(14px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .nav {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1.12rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--purple), #5b21b6);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 30px rgba(139, 92, 246, 0.35);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      font-size: 0.95rem;
+    }
+
+    .nav-links a { color: var(--muted); font-weight: 600; }
+    .nav-links a:hover { color: var(--text); }
+
+    .wrap {
+      max-width: 920px;
+      margin: 0 auto;
+      padding: 56px 20px 70px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 18px 0 14px;
+      font-size: clamp(2rem, 5vw, 3.35rem);
+      line-height: 1.08;
+      letter-spacing: -0.055em;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.08rem;
+      max-width: 790px;
+      margin: 0;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.03));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 30px;
+      margin-top: 26px;
+    }
+
+    h2 {
+      margin: 32px 0 10px;
+      font-size: 1.45rem;
+      letter-spacing: -0.025em;
+    }
+
+    h2:first-child { margin-top: 0; }
+
+    p { color: var(--muted); margin: 0 0 15px; }
+
+    ul {
+      margin: 8px 0 18px;
+      padding-left: 22px;
+      color: var(--muted);
+    }
+
+    li { margin-bottom: 9px; }
+
+    .values {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .value-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .value-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      color: var(--text);
+    }
+
+    .value-card p { margin: 0; font-size: 0.95rem; }
+
+    .notice {
+      border: 1px solid rgba(34, 197, 94, 0.28);
+      background: rgba(34, 197, 94, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      color: #d7ffe5;
+      margin: 20px 0;
+    }
+
+    .notice strong { color: #ffffff; }
+
+    .cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--purple), #6d28d9);
+      color: #ffffff;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .cta:hover { text-decoration: none; }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 28px 20px;
+      color: var(--soft);
+      text-align: center;
+      font-size: 0.92rem;
+    }
+
+    .footer-links {
+      margin-top: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 700px) {
+      .card { padding: 22px; border-radius: 20px; }
+      .values { grid-template-columns: 1fr; }
+      .wrap { padding-top: 38px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="/">
+        <span class="brand-badge">✉️</span>
+        <span>ShortLifeMail</span>
+      </a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/about.html">About</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/contact.html">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <span class="eyebrow">About ShortLifeMail</span>
+      <h1>Built to protect your real inbox</h1>
+      <p class="lead">
+        ShortLifeMail is a free temporary email service. It was built for one purpose: to give people a simple, no-signup way to receive emails online without handing over their personal address.
+      </p>
+    </section>
+
+    <article class="card">
+      <h2>What ShortLifeMail is</h2>
+      <p>
+        ShortLifeMail is a disposable inbox generator. When you open the site, it creates a temporary email address for you automatically. You can copy that address, use it on another website, and check your inbox by clicking Refresh. No account. No password. No tracking.
+      </p>
+      <p>
+        The inbox lasts for ten minutes by default. You can extend it if you need more time. When you are done, the address and everything in it is deleted automatically.
+      </p>
+
+      <h2>Why it exists</h2>
+      <p>
+        Many websites ask for an email address before showing content, unlocking a free download, or confirming a sign-up. In many cases, that email address then ends up on a mailing list that sends weekly newsletters, promotional emails, or marketing campaigns you never asked for.
+      </p>
+      <p>
+        ShortLifeMail was built to solve that problem. It gives you a real, working inbox that you can use for low-risk online tasks. You get the email you need. Your personal inbox stays clean.
+      </p>
+
+      <div class="notice">
+        <strong>No sign-up required.</strong> ShortLifeMail does not ask for your name, your real email, or any personal information. You open the page and the address is ready.
+      </div>
+
+      <h2>What we believe about email privacy</h2>
+      <p>
+        Your personal email address is connected to your identity, your accounts, and your communication. Sharing it with every website you visit creates real risk: more spam, more marketing, and more exposure if a website is ever breached or sells its data.
+      </p>
+      <p>
+        We think people should have a practical way to manage that risk. Temporary email is not a perfect solution to every privacy problem, but it is a useful tool for reducing unnecessary exposure during routine online tasks.
+      </p>
+
+      <h2>What we stand for</h2>
+      <div class="values">
+        <div class="value-card">
+          <h3>No accounts</h3>
+          <p>You should not have to register to use a basic privacy tool. ShortLifeMail works without any sign-up process.</p>
+        </div>
+
+        <div class="value-card">
+          <h3>No tracking</h3>
+          <p>We do not track what websites you use the temporary address on or what emails you receive.</p>
+        </div>
+
+        <div class="value-card">
+          <h3>No long-term storage</h3>
+          <p>Temporary inboxes and messages are deleted automatically. They are not stored or retained after expiry.</p>
+        </div>
+
+        <div class="value-card">
+          <h3>Honest about limits</h3>
+          <p>We are clear about what temporary email is not suitable for. It should not be used for important, sensitive, or long-term accounts.</p>
+        </div>
+      </div>
+
+      <h2>When to use ShortLifeMail</h2>
+      <p>
+        ShortLifeMail is best for low-risk, short-term situations. If you need to receive a confirmation email, access a free download, test a website, or sign up for something you may not use again, this tool can protect your main inbox from the follow-up.
+      </p>
+      <ul>
+        <li>Testing websites or web applications.</li>
+        <li>Receiving one-time confirmation emails.</li>
+        <li>Accessing free content without joining mailing lists.</li>
+        <li>Protecting your main inbox from spam.</li>
+        <li>Quick sign-ups where you do not need long-term access.</li>
+      </ul>
+
+      <h2>When not to use it</h2>
+      <p>
+        Temporary email is the wrong tool for accounts that matter. If you need to recover access to an account, receive sensitive information, or keep a record of what was sent, use your real email address.
+      </p>
+      <ul>
+        <li>Banking, financial accounts, or payments.</li>
+        <li>Medical, legal, or government services.</li>
+        <li>Password recovery for important accounts.</li>
+        <li>Shopping orders you need to track or return.</li>
+        <li>Any account you expect to use long-term.</li>
+      </ul>
+
+      <h2>The team behind ShortLifeMail</h2>
+      <p>
+        ShortLifeMail is an independent project run by a small team. The email infrastructure is powered by <a href="https://mail.tm" rel="nofollow noopener" target="_blank">mail.tm</a>, a trusted disposable email API. The frontend and guides are maintained in-house.
+      </p>
+      <p>
+        We built ShortLifeMail because we use temporary email ourselves and wanted a clean, fast, honest tool without distractions or hidden data collection.
+      </p>
+
+      <h2>Get in touch</h2>
+      <p>
+        If you have a question, a concern, or something to report, you can reach us through the <a href="/contact.html">contact page</a>. We read every message.
+      </p>
+
+      <a class="cta" href="/">Create a free temporary email</a>
+    </article>
+  </main>
+
+  <footer class="footer">
+    <div>© 2026 ShortLifeMail. All rights reserved.</div>
+    <div class="footer-links">
+      <a href="/">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/terms.html">Terms of Use</a>
+      <a href="/contact.html">Contact</a>
+    </div>
+  </footer>
+</body>
+</html>
