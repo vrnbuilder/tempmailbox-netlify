@@ -335,6 +335,7 @@ function formatDate(value) {
 const EMAIL_SKIP_TAGS = new Set([
   "script", "style", "noscript", "template", "head", "title", "meta", "link",
   "iframe", "frame", "object", "embed", "svg", "math", "audio", "video", "canvas",
+  "noembed", "noframes",
 ]);
 
 const EMAIL_BLOCK_TAGS = new Set([
@@ -355,6 +356,22 @@ function safeHttpUrl(value) {
   }
 }
 
+// A parsed email controls its own element names, and a field such as
+// <input name="childNodes"> replaces that property on its form. Read parsed
+// nodes through the DOM prototypes so an email cannot hide its own content.
+function domGetter(proto, name) {
+  const { get } = Object.getOwnPropertyDescriptor(proto, name);
+  return (node) => get.call(node);
+}
+
+const getDocumentBody = domGetter(Document.prototype, "body");
+const getNodeType = domGetter(Node.prototype, "nodeType");
+const getNodeValue = domGetter(Node.prototype, "nodeValue");
+const getChildNodes = domGetter(Node.prototype, "childNodes");
+const getLocalName = domGetter(Element.prototype, "localName");
+const getAttr = (node, name) => Element.prototype.getAttribute.call(node, name);
+const hasAttr = (node, name) => Element.prototype.hasAttribute.call(node, name);
+
 // DOMParser builds an inert document: its scripts do not run and its images
 // and other resources are not fetched. Only strings leave this function, and
 // they are displayed through textContent, so email HTML never reaches the page.
@@ -364,36 +381,39 @@ function extractEmailHtml(html) {
   const links = [];
 
   function walk(node) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      parts.push(node.nodeValue.replace(/\s+/g, " "));
+    const type = getNodeType(node);
+    if (type === Node.TEXT_NODE) {
+      parts.push(getNodeValue(node).replace(/\s+/g, " "));
       return;
     }
-    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    if (type !== Node.ELEMENT_NODE) return;
 
-    const tag = node.localName;
-    const style = node.getAttribute("style") || "";
-    if (EMAIL_SKIP_TAGS.has(tag) || node.hasAttribute("hidden") || /display\s*:\s*none/i.test(style)) {
+    const tag = getLocalName(node);
+    const style = getAttr(node, "style") || "";
+    if (EMAIL_SKIP_TAGS.has(tag) || hasAttr(node, "hidden") || /display\s*:\s*none/i.test(style)) {
       return;
     }
 
     if (tag === "img") {
-      parts.push(node.getAttribute("alt") || "");
+      parts.push(getAttr(node, "alt") || "");
       return;
     }
 
-    if (tag === "a") {
-      const url = safeHttpUrl(node.getAttribute("href"));
-      if (url) links.push({ label: node.textContent.replace(/\s+/g, " ").trim(), url });
-    }
-
     const block = EMAIL_BLOCK_TAGS.has(tag);
+    const start = parts.length;
     if (block) parts.push("\n");
-    node.childNodes.forEach(walk);
+    Array.from(getChildNodes(node)).forEach(walk);
     if (block) parts.push("\n");
     if (tag === "td" || tag === "th") parts.push(" ");
+
+    if (tag === "a") {
+      const url = safeHttpUrl(getAttr(node, "href"));
+      if (url) links.push({ label: parts.slice(start).join("").replace(/\s+/g, " ").trim(), url });
+    }
   }
 
-  if (doc.body) walk(doc.body);
+  const body = getDocumentBody(doc);
+  if (body) walk(body);
 
   const text = parts.join("")
     .replace(/[ \t]+/g, " ")
@@ -412,22 +432,53 @@ function findTextLinks(text) {
     .map((url) => ({ label: "", url }));
 }
 
-// The relay's plain-text body can be only a short preview of an HTML email,
-// so show whichever version has more text and collect links from both.
-function getMessageContent(msg) {
-  const plain = msg.body ? String(msg.body).trim() : "";
-  const extracted = msg.htmlBody ? extractEmailHtml(msg.htmlBody) : { text: "", links: [] };
-  const text = extracted.text.length >= plain.length ? extracted.text : plain;
-
+function buildVersion(source, text, links) {
   const seen = new Set();
-  const links = [...extracted.links, ...findTextLinks(plain), ...findTextLinks(text)]
-    .filter((link) => {
-      if (seen.has(link.url)) return false;
-      seen.add(link.url);
-      return true;
-    });
+  const uniqueLinks = [...links, ...findTextLinks(text)].filter((link) => {
+    if (seen.has(link.url)) return false;
+    seen.add(link.url);
+    return true;
+  });
+  return { source, text, links: uniqueLinks };
+}
 
-  return { text, links };
+// Ignores spacing and invisible characters that differ between the versions.
+function comparableText(text) {
+  return String(text)
+    .replace(/[­͏​-‍⁠﻿]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// The relay sends a short preview as the body when an email has no plain-text
+// part, and the page cannot see which one it received. So length proves
+// nothing: plain text only counts as a preview when the HTML text starts with
+// it. That also means the HTML version contains everything the plain text said.
+function isPreviewOf(plainText, htmlText) {
+  const preview = comparableText(plainText).replace(/\s*(?:…|\.{3})$/, "");
+  const full = comparableText(htmlText);
+  return full.length > preview.length && full.startsWith(preview);
+}
+
+// Prefer the plain-text body. Use the HTML text when the body is missing or is
+// provably a preview of it. In every other case completeness is unknown, so
+// keep the plain text and offer the HTML version as a visible, explicit switch.
+function getMessageContent(msg) {
+  const plain = buildVersion("plain", msg.body ? String(msg.body).trim() : "", []);
+  const extracted = msg.htmlBody ? extractEmailHtml(msg.htmlBody) : null;
+
+  if (!extracted || (!extracted.text && extracted.links.length === 0)) {
+    return { shown: plain, other: null };
+  }
+
+  const html = buildVersion("html", extracted.text, extracted.links);
+  if (!plain.text || isPreviewOf(plain.text, html.text)) {
+    return { shown: html, other: null };
+  }
+
+  const sameText = comparableText(plain.text) === comparableText(html.text);
+  const sameLinks = html.links.every((link) => plain.links.some((item) => item.url === link.url));
+  return { shown: plain, other: sameText && sameLinks ? null : html };
 }
 
 function metaRow(label, value) {
@@ -445,10 +496,15 @@ async function copyLink(url) {
   }
 }
 
-function renderLinks(links) {
+function renderLinks(version) {
+  const { links } = version;
   const section = el("div", "border border-gray-700 rounded p-3 space-y-2");
   section.append(
-    el("div", "text-xs font-semibold text-gray-300", "Links in this message"),
+    el(
+      "div",
+      "text-xs font-semibold text-gray-300",
+      version.source === "html" ? "Links in the HTML version" : "Links in the plain-text version"
+    ),
     el("div", "text-xs text-gray-400", "Links do not open from here. Copy one into your browser only if you trust the sender.")
   );
 
@@ -473,6 +529,43 @@ function renderLinks(links) {
   }
 
   return section;
+}
+
+// Shows one version of the message. Its links always come from that version.
+function renderMessageBody(target, shown, other) {
+  target.textContent = "";
+  target.append(
+    el(
+      "div",
+      "bg-black border border-gray-700 rounded p-3 text-sm overflow-auto whitespace-pre-wrap break-words",
+      shown.text || "No message body."
+    )
+  );
+
+  if (other) {
+    const isPlain = shown.source === "plain";
+    const row = el("div", "flex items-center justify-between gap-2");
+    const button = el(
+      "button",
+      "border border-gray-400 hover:bg-gray-800 px-2 py-1 text-xs rounded shrink-0",
+      isPlain ? "Show HTML version as text" : "Show plain-text version"
+    );
+    button.type = "button";
+    button.onclick = () => renderMessageBody(target, other, shown);
+    row.append(
+      el(
+        "div",
+        "text-xs text-gray-400",
+        isPlain ? "Showing the plain-text version. The HTML version differs." : "Showing the HTML version as text."
+      ),
+      button
+    );
+    target.append(row);
+  }
+
+  if (shown.links.length > 0) {
+    target.append(renderLinks(shown));
+  }
 }
 
 function showPopup(message, type = "success") {
@@ -677,20 +770,11 @@ async function loadMessage(id) {
       metaRow("Date:", formatDate(msg.createdAt))
     );
 
-    const view = el("div", "space-y-3");
-    view.append(
-      subject,
-      meta,
-      el(
-        "div",
-        "bg-black border border-gray-700 rounded p-3 text-sm overflow-auto whitespace-pre-wrap break-words",
-        content.text || "No message body."
-      )
-    );
+    const bodyArea = el("div", "space-y-3");
+    renderMessageBody(bodyArea, content.shown, content.other);
 
-    if (content.links.length > 0) {
-      view.append(renderLinks(content.links));
-    }
+    const view = el("div", "space-y-3");
+    view.append(subject, meta, bodyArea);
 
     const target = $("msgBody");
     target.textContent = "";
