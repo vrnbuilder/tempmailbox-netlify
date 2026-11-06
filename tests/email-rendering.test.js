@@ -32,13 +32,16 @@ function findBrowser() {
   return candidates.find((candidate) => candidate && fs.existsSync(candidate));
 }
 
-// On Windows, killing the launcher leaves the browser's child processes running.
-function stopBrowser(child) {
-  if (process.platform === "win32") {
-    spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
-  } else {
-    child.kill();
-  }
+// On Windows, Edge's launcher exits and the real browser outlives it, so stop
+// processes by this run's unique profile folder. That leaves the user's own
+// browser windows alone.
+function stopBrowser(child, profile) {
+  child.kill();
+  if (process.platform !== "win32") return;
+  const command = "Get-CimInstance Win32_Process | " +
+    `Where-Object { $_.CommandLine -like '*${profile}*' } | ` +
+    "ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }";
+  spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", command], { stdio: "ignore" });
 }
 
 function buildMessages(origin) {
@@ -406,7 +409,7 @@ async function main() {
   const timedOut = new Promise((resolve) => setTimeout(() => resolve(null), TIMEOUT_MS));
   const pageResults = await Promise.race([reported, timedOut]);
 
-  stopBrowser(child);
+  stopBrowser(child, profile);
   server.close();
   server.closeAllConnections();
   setTimeout(() => {
