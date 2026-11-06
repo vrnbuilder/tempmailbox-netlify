@@ -10,7 +10,7 @@
 
 "use strict";
 
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const http = require("http");
 const os = require("os");
@@ -30,6 +30,15 @@ function findBrowser() {
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
   ];
   return candidates.find((candidate) => candidate && fs.existsSync(candidate));
+}
+
+// On Windows, killing the launcher leaves the browser's child processes running.
+function stopBrowser(child) {
+  if (process.platform === "win32") {
+    spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+  } else {
+    child.kill();
+  }
 }
 
 function buildMessages(origin) {
@@ -397,7 +406,7 @@ async function main() {
   const timedOut = new Promise((resolve) => setTimeout(() => resolve(null), TIMEOUT_MS));
   const pageResults = await Promise.race([reported, timedOut]);
 
-  child.kill();
+  stopBrowser(child);
   server.close();
   server.closeAllConnections();
   setTimeout(() => {
