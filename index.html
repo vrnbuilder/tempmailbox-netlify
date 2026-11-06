@@ -318,6 +318,256 @@ function $(id) {
   return document.getElementById(id);
 }
 
+// Everything in an email is untrusted: sender, recipient, subject and body.
+// Build the inbox and message views with textContent only. Never pass email
+// data to an API that parses HTML into this page.
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleString() : "";
+}
+
+const EMAIL_SKIP_TAGS = new Set([
+  "script", "style", "noscript", "template", "head", "title", "meta", "link",
+  "iframe", "frame", "object", "embed", "svg", "math", "audio", "video", "canvas",
+  "noembed", "noframes",
+]);
+
+const EMAIL_BLOCK_TAGS = new Set([
+  "address", "article", "aside", "blockquote", "br", "center", "dd", "div",
+  "dl", "dt", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header",
+  "hr", "li", "main", "nav", "ol", "p", "pre", "section", "table", "tbody",
+  "tfoot", "thead", "tr", "ul",
+]);
+
+const MAX_EMAIL_LINKS = 20;
+
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value).trim());
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// A parsed email controls its own element names, and a field such as
+// <input name="childNodes"> replaces that property on its form. Read parsed
+// nodes through the DOM prototypes so an email cannot hide its own content.
+function domGetter(proto, name) {
+  const { get } = Object.getOwnPropertyDescriptor(proto, name);
+  return (node) => get.call(node);
+}
+
+const getDocumentBody = domGetter(Document.prototype, "body");
+const getNodeType = domGetter(Node.prototype, "nodeType");
+const getNodeValue = domGetter(Node.prototype, "nodeValue");
+const getChildNodes = domGetter(Node.prototype, "childNodes");
+const getLocalName = domGetter(Element.prototype, "localName");
+const getAttr = (node, name) => Element.prototype.getAttribute.call(node, name);
+const hasAttr = (node, name) => Element.prototype.hasAttribute.call(node, name);
+
+// DOMParser builds an inert document: its scripts do not run and its images
+// and other resources are not fetched. Only strings leave this function, and
+// they are displayed through textContent, so email HTML never reaches the page.
+function extractEmailHtml(html) {
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  const parts = [];
+  const links = [];
+
+  function walk(node) {
+    const type = getNodeType(node);
+    if (type === Node.TEXT_NODE) {
+      parts.push(getNodeValue(node).replace(/\s+/g, " "));
+      return;
+    }
+    if (type !== Node.ELEMENT_NODE) return;
+
+    const tag = getLocalName(node);
+    const style = getAttr(node, "style") || "";
+    if (EMAIL_SKIP_TAGS.has(tag) || hasAttr(node, "hidden") || /display\s*:\s*none/i.test(style)) {
+      return;
+    }
+
+    if (tag === "img") {
+      parts.push(getAttr(node, "alt") || "");
+      return;
+    }
+
+    const block = EMAIL_BLOCK_TAGS.has(tag);
+    const start = parts.length;
+    if (block) parts.push("\n");
+    Array.from(getChildNodes(node)).forEach(walk);
+    if (block) parts.push("\n");
+    if (tag === "td" || tag === "th") parts.push(" ");
+
+    if (tag === "a") {
+      const url = safeHttpUrl(getAttr(node, "href"));
+      if (url) links.push({ label: parts.slice(start).join("").replace(/\s+/g, " ").trim(), url });
+    }
+  }
+
+  const body = getDocumentBody(doc);
+  if (body) walk(body);
+
+  const text = parts.join("")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ ?\n ?/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return { text, links };
+}
+
+function findTextLinks(text) {
+  const matches = String(text).match(/https?:\/\/[^\s<>"']+/gi) || [];
+  return matches
+    .map((match) => safeHttpUrl(match.replace(/[.,;:!?)\]}]+$/, "")))
+    .filter(Boolean)
+    .map((url) => ({ label: "", url }));
+}
+
+function buildVersion(source, text, links) {
+  const seen = new Set();
+  const uniqueLinks = [...links, ...findTextLinks(text)].filter((link) => {
+    if (seen.has(link.url)) return false;
+    seen.add(link.url);
+    return true;
+  });
+  return { source, text, links: uniqueLinks };
+}
+
+// Ignores spacing and invisible characters that differ between the versions.
+function comparableText(text) {
+  return String(text)
+    .replace(/[­͏​-‍⁠﻿]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// The relay sends a short preview as the body when an email has no plain-text
+// part, and the page cannot see which one it received. So length proves
+// nothing: plain text only counts as a preview when the HTML text starts with
+// it. That also means the HTML version contains everything the plain text said.
+function isPreviewOf(plainText, htmlText) {
+  const preview = comparableText(plainText).replace(/\s*(?:…|\.{3})$/, "");
+  const full = comparableText(htmlText);
+  return full.length > preview.length && full.startsWith(preview);
+}
+
+// Prefer the plain-text body. Use the HTML text when the body is missing or is
+// provably a preview of it. In every other case completeness is unknown, so
+// keep the plain text and offer the HTML version as a visible, explicit switch.
+function getMessageContent(msg) {
+  const plain = buildVersion("plain", msg.body ? String(msg.body).trim() : "", []);
+  const extracted = msg.htmlBody ? extractEmailHtml(msg.htmlBody) : null;
+
+  if (!extracted || (!extracted.text && extracted.links.length === 0)) {
+    return { shown: plain, other: null };
+  }
+
+  const html = buildVersion("html", extracted.text, extracted.links);
+  if (!plain.text || isPreviewOf(plain.text, html.text)) {
+    return { shown: html, other: null };
+  }
+
+  const sameText = comparableText(plain.text) === comparableText(html.text);
+  const sameLinks = html.links.every((link) => plain.links.some((item) => item.url === link.url));
+  return { shown: plain, other: sameText && sameLinks ? null : html };
+}
+
+function metaRow(label, value) {
+  const row = el("div");
+  row.append(el("strong", "", label), document.createTextNode(` ${value}`));
+  return row;
+}
+
+async function copyLink(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    showPopup("✅ Link copied to clipboard", "success");
+  } catch (err) {
+    showPopup("Copy failed — copy manually", "error");
+  }
+}
+
+function renderLinks(version) {
+  const { links } = version;
+  const section = el("div", "border border-gray-700 rounded p-3 space-y-2");
+  section.append(
+    el(
+      "div",
+      "text-xs font-semibold text-gray-300",
+      version.source === "html" ? "Links in the HTML version" : "Links in the plain-text version"
+    ),
+    el("div", "text-xs text-gray-400", "Links do not open from here. Copy one into your browser only if you trust the sender.")
+  );
+
+  links.slice(0, MAX_EMAIL_LINKS).forEach((link) => {
+    const row = el("div", "flex items-start justify-between gap-2");
+    const details = el("div", "min-w-0");
+    if (link.label && link.label !== link.url) {
+      details.append(el("div", "text-xs text-gray-300 break-words", link.label));
+    }
+    details.append(el("div", "font-mono text-xs text-gray-400 break-all", link.url));
+
+    const button = el("button", "border border-gray-400 hover:bg-gray-800 px-2 py-1 text-xs rounded shrink-0", "Copy link");
+    button.type = "button";
+    button.onclick = () => copyLink(link.url);
+
+    row.append(details, button);
+    section.append(row);
+  });
+
+  if (links.length > MAX_EMAIL_LINKS) {
+    section.append(el("div", "text-xs text-gray-400", `${links.length - MAX_EMAIL_LINKS} more link(s) not shown.`));
+  }
+
+  return section;
+}
+
+// Shows one version of the message. Its links always come from that version.
+function renderMessageBody(target, shown, other) {
+  target.textContent = "";
+  target.append(
+    el(
+      "div",
+      "bg-black border border-gray-700 rounded p-3 text-sm overflow-auto whitespace-pre-wrap break-words",
+      shown.text || "No message body."
+    )
+  );
+
+  if (other) {
+    const isPlain = shown.source === "plain";
+    const row = el("div", "flex items-center justify-between gap-2");
+    const button = el(
+      "button",
+      "border border-gray-400 hover:bg-gray-800 px-2 py-1 text-xs rounded shrink-0",
+      isPlain ? "Show HTML version as text" : "Show plain-text version"
+    );
+    button.type = "button";
+    button.onclick = () => renderMessageBody(target, other, shown);
+    row.append(
+      el(
+        "div",
+        "text-xs text-gray-400",
+        isPlain ? "Showing the plain-text version. The HTML version differs." : "Showing the HTML version as text."
+      ),
+      button
+    );
+    target.append(row);
+  }
+
+  if (shown.links.length > 0) {
+    target.append(renderLinks(shown));
+  }
+}
+
 function showPopup(message, type = "success") {
   const alertBox = $("alert");
 
@@ -378,7 +628,7 @@ function updateTimer() {
 
 function renderInbox(items) {
   const list = $("inboxList");
-  list.innerHTML = "";
+  list.textContent = "";
 
   if (!items || items.length === 0) {
     const empty = document.createElement("li");
@@ -393,11 +643,11 @@ function renderInbox(items) {
     li.className =
       "p-3 border border-gray-700 rounded cursor-pointer hover:bg-gray-800 transition";
 
-    li.innerHTML = `
-      <div class="text-xs text-gray-400 truncate">${item.from || "Unknown sender"}</div>
-      <div class="font-semibold">${item.subject || "(no subject)"}</div>
-      <div class="text-xs text-gray-500">${item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</div>
-    `;
+    li.append(
+      el("div", "text-xs text-gray-400 truncate", item.from || "Unknown sender"),
+      el("div", "font-semibold", item.subject || "(no subject)"),
+      el("div", "text-xs text-gray-500", formatDate(item.createdAt))
+    );
 
     li.onclick = () => loadMessage(item.id);
     list.appendChild(li);
@@ -419,7 +669,7 @@ async function newInbox() {
     updateTimer();
 
     renderInbox([]);
-    $("msgBody").innerHTML = "Select a message to read it.";
+    $("msgBody").textContent = "Select a message to read it.";
     $("autoStatus").textContent = "Manual refresh only — click Refresh every 20–30 seconds to check for new emails.";
 
   } catch (err) {
@@ -505,22 +755,30 @@ async function loadMessage(id) {
       token: state.token,
     });
 
-    $("msgBody").innerHTML = `
-      <div class="space-y-3">
-        <div>
-          <div class="text-xs text-gray-400">Subject</div>
-          <div class="font-semibold">${msg.subject || "(no subject)"}</div>
-        </div>
-        <div class="text-xs text-gray-400">
-          <div><strong>From:</strong> ${msg.from || ""}</div>
-          <div><strong>To:</strong> ${msg.to || ""}</div>
-          <div><strong>Date:</strong> ${msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</div>
-        </div>
-        <div class="bg-black border border-gray-700 rounded p-3 text-sm overflow-auto">
-          ${msg.htmlBody || msg.body || "No message body."}
-        </div>
-      </div>
-    `;
+    const content = getMessageContent(msg);
+
+    const subject = el("div");
+    subject.append(
+      el("div", "text-xs text-gray-400", "Subject"),
+      el("div", "font-semibold", msg.subject || "(no subject)")
+    );
+
+    const meta = el("div", "text-xs text-gray-400");
+    meta.append(
+      metaRow("From:", msg.from || ""),
+      metaRow("To:", msg.to || ""),
+      metaRow("Date:", formatDate(msg.createdAt))
+    );
+
+    const bodyArea = el("div", "space-y-3");
+    renderMessageBody(bodyArea, content.shown, content.other);
+
+    const view = el("div", "space-y-3");
+    view.append(subject, meta, bodyArea);
+
+    const target = $("msgBody");
+    target.textContent = "";
+    target.append(view);
   } catch (err) {
     showPopup("Could not open message", "error");
   }
