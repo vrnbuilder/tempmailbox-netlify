@@ -318,6 +318,163 @@ function $(id) {
   return document.getElementById(id);
 }
 
+// Everything in an email is untrusted: sender, recipient, subject and body.
+// Build the inbox and message views with textContent only. Never pass email
+// data to an API that parses HTML into this page.
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+
+function formatDate(value) {
+  return value ? new Date(value).toLocaleString() : "";
+}
+
+const EMAIL_SKIP_TAGS = new Set([
+  "script", "style", "noscript", "template", "head", "title", "meta", "link",
+  "iframe", "frame", "object", "embed", "svg", "math", "audio", "video", "canvas",
+]);
+
+const EMAIL_BLOCK_TAGS = new Set([
+  "address", "article", "aside", "blockquote", "br", "center", "dd", "div",
+  "dl", "dt", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header",
+  "hr", "li", "main", "nav", "ol", "p", "pre", "section", "table", "tbody",
+  "tfoot", "thead", "tr", "ul",
+]);
+
+const MAX_EMAIL_LINKS = 20;
+
+function safeHttpUrl(value) {
+  try {
+    const url = new URL(String(value).trim());
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch (err) {
+    return null;
+  }
+}
+
+// DOMParser builds an inert document: its scripts do not run and its images
+// and other resources are not fetched. Only strings leave this function, and
+// they are displayed through textContent, so email HTML never reaches the page.
+function extractEmailHtml(html) {
+  const doc = new DOMParser().parseFromString(String(html), "text/html");
+  const parts = [];
+  const links = [];
+
+  function walk(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      parts.push(node.nodeValue.replace(/\s+/g, " "));
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+    const tag = node.localName;
+    const style = node.getAttribute("style") || "";
+    if (EMAIL_SKIP_TAGS.has(tag) || node.hasAttribute("hidden") || /display\s*:\s*none/i.test(style)) {
+      return;
+    }
+
+    if (tag === "img") {
+      parts.push(node.getAttribute("alt") || "");
+      return;
+    }
+
+    if (tag === "a") {
+      const url = safeHttpUrl(node.getAttribute("href"));
+      if (url) links.push({ label: node.textContent.replace(/\s+/g, " ").trim(), url });
+    }
+
+    const block = EMAIL_BLOCK_TAGS.has(tag);
+    if (block) parts.push("\n");
+    node.childNodes.forEach(walk);
+    if (block) parts.push("\n");
+    if (tag === "td" || tag === "th") parts.push(" ");
+  }
+
+  if (doc.body) walk(doc.body);
+
+  const text = parts.join("")
+    .replace(/[ \t]+/g, " ")
+    .replace(/ ?\n ?/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  return { text, links };
+}
+
+function findTextLinks(text) {
+  const matches = String(text).match(/https?:\/\/[^\s<>"']+/gi) || [];
+  return matches
+    .map((match) => safeHttpUrl(match.replace(/[.,;:!?)\]}]+$/, "")))
+    .filter(Boolean)
+    .map((url) => ({ label: "", url }));
+}
+
+// The relay's plain-text body can be only a short preview of an HTML email,
+// so show whichever version has more text and collect links from both.
+function getMessageContent(msg) {
+  const plain = msg.body ? String(msg.body).trim() : "";
+  const extracted = msg.htmlBody ? extractEmailHtml(msg.htmlBody) : { text: "", links: [] };
+  const text = extracted.text.length >= plain.length ? extracted.text : plain;
+
+  const seen = new Set();
+  const links = [...extracted.links, ...findTextLinks(plain), ...findTextLinks(text)]
+    .filter((link) => {
+      if (seen.has(link.url)) return false;
+      seen.add(link.url);
+      return true;
+    });
+
+  return { text, links };
+}
+
+function metaRow(label, value) {
+  const row = el("div");
+  row.append(el("strong", "", label), document.createTextNode(` ${value}`));
+  return row;
+}
+
+async function copyLink(url) {
+  try {
+    await navigator.clipboard.writeText(url);
+    showPopup("✅ Link copied to clipboard", "success");
+  } catch (err) {
+    showPopup("Copy failed — copy manually", "error");
+  }
+}
+
+function renderLinks(links) {
+  const section = el("div", "border border-gray-700 rounded p-3 space-y-2");
+  section.append(
+    el("div", "text-xs font-semibold text-gray-300", "Links in this message"),
+    el("div", "text-xs text-gray-400", "Links do not open from here. Copy one into your browser only if you trust the sender.")
+  );
+
+  links.slice(0, MAX_EMAIL_LINKS).forEach((link) => {
+    const row = el("div", "flex items-start justify-between gap-2");
+    const details = el("div", "min-w-0");
+    if (link.label && link.label !== link.url) {
+      details.append(el("div", "text-xs text-gray-300 break-words", link.label));
+    }
+    details.append(el("div", "font-mono text-xs text-gray-400 break-all", link.url));
+
+    const button = el("button", "border border-gray-400 hover:bg-gray-800 px-2 py-1 text-xs rounded shrink-0", "Copy link");
+    button.type = "button";
+    button.onclick = () => copyLink(link.url);
+
+    row.append(details, button);
+    section.append(row);
+  });
+
+  if (links.length > MAX_EMAIL_LINKS) {
+    section.append(el("div", "text-xs text-gray-400", `${links.length - MAX_EMAIL_LINKS} more link(s) not shown.`));
+  }
+
+  return section;
+}
+
 function showPopup(message, type = "success") {
   const alertBox = $("alert");
 
@@ -378,7 +535,7 @@ function updateTimer() {
 
 function renderInbox(items) {
   const list = $("inboxList");
-  list.innerHTML = "";
+  list.textContent = "";
 
   if (!items || items.length === 0) {
     const empty = document.createElement("li");
@@ -393,11 +550,11 @@ function renderInbox(items) {
     li.className =
       "p-3 border border-gray-700 rounded cursor-pointer hover:bg-gray-800 transition";
 
-    li.innerHTML = `
-      <div class="text-xs text-gray-400 truncate">${item.from || "Unknown sender"}</div>
-      <div class="font-semibold">${item.subject || "(no subject)"}</div>
-      <div class="text-xs text-gray-500">${item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}</div>
-    `;
+    li.append(
+      el("div", "text-xs text-gray-400 truncate", item.from || "Unknown sender"),
+      el("div", "font-semibold", item.subject || "(no subject)"),
+      el("div", "text-xs text-gray-500", formatDate(item.createdAt))
+    );
 
     li.onclick = () => loadMessage(item.id);
     list.appendChild(li);
@@ -419,7 +576,7 @@ async function newInbox() {
     updateTimer();
 
     renderInbox([]);
-    $("msgBody").innerHTML = "Select a message to read it.";
+    $("msgBody").textContent = "Select a message to read it.";
     $("autoStatus").textContent = "Manual refresh only — click Refresh every 20–30 seconds to check for new emails.";
 
   } catch (err) {
@@ -505,22 +662,39 @@ async function loadMessage(id) {
       token: state.token,
     });
 
-    $("msgBody").innerHTML = `
-      <div class="space-y-3">
-        <div>
-          <div class="text-xs text-gray-400">Subject</div>
-          <div class="font-semibold">${msg.subject || "(no subject)"}</div>
-        </div>
-        <div class="text-xs text-gray-400">
-          <div><strong>From:</strong> ${msg.from || ""}</div>
-          <div><strong>To:</strong> ${msg.to || ""}</div>
-          <div><strong>Date:</strong> ${msg.createdAt ? new Date(msg.createdAt).toLocaleString() : ""}</div>
-        </div>
-        <div class="bg-black border border-gray-700 rounded p-3 text-sm overflow-auto">
-          ${msg.htmlBody || msg.body || "No message body."}
-        </div>
-      </div>
-    `;
+    const content = getMessageContent(msg);
+
+    const subject = el("div");
+    subject.append(
+      el("div", "text-xs text-gray-400", "Subject"),
+      el("div", "font-semibold", msg.subject || "(no subject)")
+    );
+
+    const meta = el("div", "text-xs text-gray-400");
+    meta.append(
+      metaRow("From:", msg.from || ""),
+      metaRow("To:", msg.to || ""),
+      metaRow("Date:", formatDate(msg.createdAt))
+    );
+
+    const view = el("div", "space-y-3");
+    view.append(
+      subject,
+      meta,
+      el(
+        "div",
+        "bg-black border border-gray-700 rounded p-3 text-sm overflow-auto whitespace-pre-wrap break-words",
+        content.text || "No message body."
+      )
+    );
+
+    if (content.links.length > 0) {
+      view.append(renderLinks(content.links));
+    }
+
+    const target = $("msgBody");
+    target.textContent = "";
+    target.append(view);
   } catch (err) {
     showPopup("Could not open message", "error");
   }
