@@ -721,6 +721,18 @@ async function main() {
       return;
     }
 
+    // Static site assets such as the logo, served from beside index.html.
+    if (url.pathname.startsWith("/assets/")) {
+      const root = path.join(path.dirname(INDEX), "assets");
+      const file = path.join(root, path.normalize(decodeURIComponent(url.pathname.slice("/assets/".length))));
+      if (file.startsWith(root + path.sep) && fs.existsSync(file) && fs.statSync(file).isFile()) {
+        const types = { ".png": "image/png", ".webp": "image/webp", ".svg": "image/svg+xml" };
+        res.writeHead(200, { "content-type": types[path.extname(file)] || "application/octet-stream" });
+        res.end(fs.readFileSync(file));
+        return;
+      }
+    }
+
     if (url.pathname !== "/favicon.ico") unexpected.push(url.pathname);
     res.writeHead(404);
     res.end();
