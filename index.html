@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <title>ShortLifeMail — Free Temporary Email Generator</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/icons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/icons/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/icons/icon-192x192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 <meta name="description" content="Create a free temporary email address in one click. Use ShortLifeMail to avoid spam, protect your real inbox, and receive temporary emails without signup.">
 
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2501807800717598"
@@ -14,11 +19,16 @@
 
 <body class="bg-black text-white min-h-screen flex flex-col">
 
-<header class="border-b border-gray-800 bg-black/95 sticky top-0 z-40">
+<header class="border-b border-gray-800 bg-black sticky top-0 z-40">
   <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-    <a href="/" class="block">
-      <h1 class="font-bold text-xl">ShortLifeMail</h1>
-      <p class="text-xs text-gray-400">Create a temporary email in 1 click — avoid spam instantly</p>
+    <a href="/" class="block self-start">
+      <h1 class="leading-none">
+        <picture>
+          <source srcset="/assets/shortlifemail-logo.webp" type="image/webp">
+          <img src="/assets/shortlifemail-logo.png" alt="ShortLifeMail" width="732" height="96" class="block h-auto w-auto max-w-full max-h-10 md:max-h-12" decoding="async" fetchpriority="high">
+        </picture>
+      </h1>
+      <p class="sr-only">Create a temporary email in 1 click — avoid spam instantly</p>
     </a>
 
     <div class="flex flex-wrap items-center gap-4">
@@ -56,7 +66,7 @@
       </p>
 
       <p class="text-xs text-yellow-400 mt-1">
-        ⚠️ Deletes in 10 minutes — extend before it expires
+        ⚠️ This page stops checking for new email when the timer ends — extend before it expires
       </p>
 
       <p id="autoStatus" class="text-xs text-gray-500 mt-1">
@@ -64,7 +74,7 @@
       </p>
 
       <p class="text-xs text-gray-400 mt-2">
-        ✅ No signup • ✅ Extend anytime • ✅ Auto deletes • ✅ No tracking
+        ✅ No signup • ✅ Extend the timer • ✅ Short-term use • ✅ No personal details requested
       </p>
     </div>
 
@@ -145,7 +155,7 @@
   <div class="bg-gray-900 border border-gray-800 rounded p-5">
     <h2 class="text-white font-bold mb-2">Short-life inbox</h2>
     <p class="text-sm text-gray-400 leading-6">
-      Inboxes are designed for quick use. You can extend the timer if you need more time before the address expires.
+      Inboxes are designed for quick use. You can extend the timer on this page if you need more time. The timer does not delete email stored by mail.tm.
     </p>
   </div>
 </section>
@@ -268,6 +278,24 @@
     </div>
 
     <div>
+      <h3 class="text-white font-semibold">Is my email deleted when the timer ends?</h3>
+      <p class="mt-1">
+        Not by the timer. It only controls this page, and ShortLifeMail does not send a delete request to mail.tm when it ends.
+        mail.tm stores accounts and messages under its own policies, so we cannot promise when any message is removed.
+        Do not use a temporary inbox for anything sensitive.
+      </p>
+    </div>
+
+    <div>
+      <h3 class="text-white font-semibold">Does ShortLifeMail use cookies or tracking?</h3>
+      <p class="mt-1">
+        ShortLifeMail uses Google advertising technology, which can use cookies and similar technologies.
+        Our code does not save your messages or record which websites you use an address on.
+        Our <a href="/privacy.html" class="underline hover:text-white">Privacy Policy</a> explains what is processed and how to control advertising cookies.
+      </p>
+    </div>
+
+    <div>
       <h3 class="text-white font-semibold">Why did an email not arrive?</h3>
       <p class="mt-1">
         Some websites block temporary email addresses. Delivery can also take time or fail depending on the sender.
@@ -286,7 +314,7 @@
 </section>
 
 <p class="text-[11px] text-gray-600 text-center">
-  Email inbox powered by mail.tm
+  Email inbox powered by <a href="https://mail.tm" class="text-gray-400 underline hover:text-white" target="_blank" rel="noopener">mail.tm</a>
 </p>
 
 <footer class="border-t border-gray-800 mt-8 pt-6 pb-4 text-center text-xs text-gray-500">
